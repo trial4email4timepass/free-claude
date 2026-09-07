@@ -1,0 +1,3 @@
+node_modules/
+.context-mode/
+.claude/settings.local.json
