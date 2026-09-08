@@ -1,41 +1,48 @@
-# DeerFlow — Project Notes
+# Playwright Skill — Project Notes
 
-This is reference context on [bytedance/deer-flow](https://github.com/bytedance/deer-flow) so it's loaded automatically when Claude Code opens this repo. See `README.md` for the full write-up; summary below.
+This is reference context on [lackeyjb/playwright-skill](https://github.com/lackeyjb/playwright-skill) so it's loaded automatically when Claude Code opens this repo. See `README.md` for the full write-up; summary below.
 
 ## What it is
 
-DeerFlow (Deep Exploration and Efficient Research Flow) is an open-source, long-horizon "super agent" harness (MIT license, Python backend + Node.js frontend). It orchestrates sub-agents, memory, and sandboxes via tools and extensible skills to research, code, and create over tasks lasting minutes to hours. v2.0 is a ground-up rewrite sharing no code with v1 (v1 lives on the `1.x` branch).
+Playwright Skill is a general-purpose Agent Skill (MIT license, JavaScript) that lets coding agents write and execute Playwright browser automation on the fly — from a simple page check to a multi-step flow — rather than relying on pre-built scripts. It's also packaged as a Claude Code Plugin. Claude decides on its own when to use it and loads only the docs needed for the task at hand.
 
-## Core capabilities
+## When to use it vs. alternatives
 
-- Sub-agents for decomposing long-horizon tasks
-- Sandbox execution (Docker/container, provisioner, or E2B-backed)
-- Long-term memory
-- Skills & tools (`.agent/skills`) plus MCP server integration
-- A Gateway service owning the agent runtime, SSE streaming, and run lifecycle
-- IM channel integrations and Claude Code (OAuth) provider support
+- This skill: real Playwright *programs* — loops, assertions, multiple contexts, network interception, screenshots/video, scripts worth keeping.
+- `@playwright/cli` (Microsoft, official): simple interactive browsing (`playwright-cli install --skills`).
+- `playwright-mcp`: tool-based control via accessibility snapshots.
 
-## Getting started
+## Repo layout (plugin format)
 
-```bash
-git clone https://github.com/bytedance/deer-flow.git
-cd deer-flow
-make setup   # interactive wizard -> config.yaml + .env
-make dev     # or: make docker-start / make up (prod)
+```
+skills/playwright-skill/
+├── SKILL.md          # concise entry point Claude reads
+├── run.js            # universal executor, stable module resolution
+├── package.json      # deps + `npm run setup`
+├── lib/helpers.js     # optional utility functions
+└── API_REFERENCE.md  # full Playwright API reference, loaded on demand
 ```
 
-Default local URL: `http://localhost:2026`. Use `make doctor` to validate setup and `make support-bundle` when filing issues.
+## Install (quick reference)
 
-## Sizing quick reference
+```bash
+npx skills add lackeyjb/playwright-skill --skill playwright-skill --global --yes
+# then, from the installed skill dir:
+npm run setup
+```
 
-- Local eval: 4 vCPU/8GB min, 8 vCPU/16GB recommended
-- Docker dev: 4 vCPU/8GB min, 8 vCPU/16GB recommended
-- Long-running server: 8 vCPU/16GB min, 16 vCPU/32GB recommended
+Claude Code plugin alternative: `/plugin marketplace add lackeyjb/playwright-skill` then `/plugin install playwright-skill@playwright-skill`.
 
-## Production notes
+## Defaults
 
-- Gateway defaults to a single worker; multi-worker needs Postgres + Redis stream bridge + run-ownership heartbeats + DB-backed event store.
-- Login uses HttpOnly cookies; passwords are never stored client-side.
-- Split-origin browser clients need `GATEWAY_CORS_ORIGINS` set explicitly (same-origin nginx has no CORS headers by default).
+- `headless: false` (visible browser by default)
+- `SLOW_MO=0` unless set
+- Screenshot helpers write to OS temp dir unless `PW_ARTIFACT_DIR` is set
 
-Links: [deerflow.tech](https://deerflow.tech) · [github.com/bytedance/deer-flow](https://github.com/bytedance/deer-flow)
+## Troubleshooting
+
+- Not installed → `npm run setup` in the skill directory.
+- Module not found → ensure execution goes through `run.js`.
+- Browser doesn't open → check `headless: false` is set.
+
+Links: [github.com/lackeyjb/playwright-skill](https://github.com/lackeyjb/playwright-skill)

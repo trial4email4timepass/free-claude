@@ -1,87 +1,144 @@
-# DeerFlow — Repo Overview
+# Playwright Skill — Repo Overview
 
-Notes on [bytedance/deer-flow](https://github.com/bytedance/deer-flow), based on its GitHub repository page and README.
+Notes on [lackeyjb/playwright-skill](https://github.com/lackeyjb/playwright-skill), based on its GitHub repository page and README.
 
 ## What it is
 
-DeerFlow (**D**eep **E**xploration and **E**fficient **R**esearch **Flow**) is an open-source, long-horizon "super agent" harness. It orchestrates sub-agents, memory, and sandboxes — via tools and extensible skills — to research, code, and create over tasks that can run from minutes to hours.
+Playwright Skill is a general-purpose **Agent Skill** that lets coding agents (Claude Code, Cursor, GitHub Copilot, Codex, Gemini CLI, OpenCode, etc.) write and execute Playwright automation on the fly — from a quick page check to a multi-step browser flow. It's also packaged as a Claude Code Plugin for easy installation.
 
 - License: MIT
-- Site: [deerflow.tech](https://deerflow.tech)
-- Stack: Python (backend) + Node.js (frontend)
-- ~81.8k stars / ~11.3k forks at time of writing; #1 on GitHub Trending following the v2 launch (Feb 28, 2026)
+- Stack: JavaScript (100%)
+- ~3.1k stars / ~240 forks, 1 branch, 9 tags at time of writing
+- Made using Claude Code
 
-**Important:** v2.0 is a ground-up rewrite and shares no code with v1. The original Deep Research framework is preserved on the `1.x` branch (still open to contributions); active development is on `2.0`.
+The agent decides on its own when to invoke the skill, based on the automation task at hand, and loads only the documentation it needs for that task (progressive disclosure).
 
-## Core capabilities
+## Why this skill (vs. alternatives)
 
-- **Sub-agents** — decomposes long-horizon tasks across coordinated agents
-- **Sandbox execution** — Docker/container, provisioner, or E2B-backed sandboxes for isolated code/tool execution
-- **Long-term memory** — persistent memory store surfaced in Settings
-- **Skills & tools** — extensible skill system (`.agent/skills`) plus MCP server integration
-- **Message gateway** — a Gateway service that owns the agent runtime, SSE streaming, and run lifecycle (including multi-worker coordination via Redis/Postgres)
-- **IM channel integrations** and **Claude Code integration** (OAuth-backed CLI provider support)
+- Use **this skill** when the agent needs to write a real Playwright *program*: loops, assertions, multiple browser contexts, network interception, screenshots/video, or a script worth keeping and rerunning.
+- For simple interactive browsing, prefer Microsoft's official `@playwright/cli` (`playwright-cli install --skills`).
+- For tool-based browser control via accessibility snapshots, prefer `playwright-mcp`.
+- This project is the code-first option for when the generated automation script is itself the useful artifact.
 
-## Sister projects
+## Features
 
-- **LLM Space** — a desktop tool for prototyping agent ideas, inspecting harness steps, replaying failures, and benchmarking performance.
-- **InfoQuest** — an intelligent search/crawling toolset from BytePlus, newly integrated into DeerFlow (free online experience available).
+- **Any automation task** — Claude writes custom code per request rather than running from a fixed script library
+- **Visible browser by default** — `headless: false` so automation is watchable in real time
+- **Portable executor** (`run.js`) — runs file and inline scripts with stable module resolution
+- **Progressive disclosure** — a concise `SKILL.md`, with the full API reference loaded only when needed
+- **Safe cleanup** — temp file management without race conditions
+- **Comprehensive helpers** — optional utility functions for common tasks
 
-## Getting started
+## Repository layout
 
-### One-line agent setup
+This repo uses the **plugin** format, with the skill nested inside it:
 
-For coding agents (Claude Code, Codex, Cursor, Windsurf, etc.):
-
-> Help me clone DeerFlow if needed, then bootstrap it for local development by following https://raw.githubusercontent.com/bytedance/deer-flow/main/Install.md
-
-### Manual quick start
-
-```bash
-git clone https://github.com/bytedance/deer-flow.git
-cd deer-flow
-make setup   # interactive wizard: LLM provider, web search, sandbox/bash/file-write prefs
+```
+playwright-skill/                 # Plugin root
+├── .claude-plugin/
+│   ├── plugin.json               # Plugin metadata for distribution
+│   └── marketplace.json          # Marketplace configuration
+├── skills/
+│   └── playwright-skill/         # The actual skill (Claude discovers this)
+│       ├── SKILL.md              # What Claude reads
+│       ├── run.js                # Universal executor (module resolution)
+│       ├── package.json          # Dependencies & setup scripts
+│       ├── lib/helpers.js        # Optional utility functions
+│       └── API_REFERENCE.md      # Full Playwright API reference
+├── tests/
+├── README.md
+├── CONTRIBUTING.md
+└── LICENSE
 ```
 
-`make setup` writes a minimal `config.yaml` and `.env`. Use `make doctor` to validate the setup, and `make config` for the full config template (`config.example.yaml`) if you want to hand-edit things like CLI-backed providers, OpenRouter, or subagent runtime caps.
+Installers handle the nested `skills/playwright-skill/` layout automatically; manually copying that subdirectory is only a fallback for clients without an installer.
 
-### Running it
+## Installation
 
-Two supported paths, each with a dev and prod mode:
+### Option 1 (recommended): the `skills` CLI
 
-| | Local | Docker |
-|---|---|---|
-| Dev | `make dev` (hot-reload) | `make docker-start` |
-| Prod | `make start` | `make up` |
+```bash
+# Global, all supported agents
+npx skills add lackeyjb/playwright-skill --skill playwright-skill --global --yes
 
-- Docker is the recommended path, especially for a persistent server (Linux + Docker preferred over macOS/Windows for that use case).
-- Local dev requires Node.js 22+, pnpm, uv, and nginx (`make check` verifies these) and a valid `config.yaml` (from `make setup`).
-- Default access URL: `http://localhost:2026`.
+# Project-only (omit --global)
+npx skills add lackeyjb/playwright-skill --skill playwright-skill --yes
 
-## Deployment sizing
+# Target specific agents
+npx skills add lackeyjb/playwright-skill --skill playwright-skill --agent claude-code cursor --global --yes
+```
 
-| Target | Starting point | Recommended |
-|---|---|---|
-| Local eval / `make dev` | 4 vCPU, 8 GB RAM, 20 GB SSD | 8 vCPU, 16 GB RAM |
-| Docker dev / `make docker-start` | 4 vCPU, 8 GB RAM, 25 GB SSD | 8 vCPU, 16 GB RAM |
-| Long-running server / `make up` | 8 vCPU, 16 GB RAM, 40 GB SSD | 16 vCPU, 32 GB RAM |
+After installing, run setup from the installed skill directory: `npm run setup`.
 
-These cover DeerFlow itself; a self-hosted LLM needs its own sizing.
+### Option 2: Claude Code Plugin
 
-## Production notes worth knowing
+```bash
+/plugin marketplace add lackeyjb/playwright-skill
+/plugin install playwright-skill@playwright-skill
+cd ~/.claude/plugins/marketplaces/playwright-skill/skills/playwright-skill
+npm run setup
+```
 
-- The Gateway keeps active runs in-process, so production defaults to a **single worker** (`GATEWAY_WORKERS=1`). Multi-worker setups require Postgres, a Redis stream bridge, run-ownership heartbeats, and a DB-backed event store.
-- Persistent deployments configure `database.backend` as `sqlite` or `postgres`, shared across the LangGraph checkpointer/store and DeerFlow's own data.
-- Login uses HttpOnly session cookies; "keep me signed in" only extends sessions over HTTPS or localhost HTTP. Passwords are never stored client-side.
-- The bundled nginx endpoint is same-origin by default; split-origin browser clients need `GATEWAY_CORS_ORIGINS` set explicitly.
+Verify with `/help`.
 
-## Support & diagnostics
+### Option 3: other Agent Skill clients
 
-`make doctor` for setup checks; `make support-bundle` generates an issue summary, an AI-assist draft, and an optional redacted evidence zip for filing GitHub issues.
+Agent Skills are supported by Claude Code, Cursor, GitHub Copilot, Codex, Gemini CLI, OpenCode, and others. Copy `skills/playwright-skill/` into the client's documented skill directory and run `npm run setup` there.
+
+### Option 4: download a release
+
+Copy `skills/playwright-skill/` from a GitHub Release into:
+- Global: `~/.claude/skills/playwright-skill`
+- Project: `/path/to/project/.claude/skills/playwright-skill`
+
+Then `cd` into it and run `npm run setup`.
+
+Verify any install by asking the agent to perform a simple browser task, e.g. "Test if google.com loads".
+
+## Usage examples
+
+- **Test any page** — "Test the homepage", "Check if the contact form works", "Verify the signup flow"
+- **Visual testing** — "Take screenshots of the dashboard in mobile and desktop", "Test responsive design across viewports"
+- **Interaction testing** — "Fill out the registration form and submit it", "Click through the main navigation", "Test the search functionality"
+- **Validation** — "Check for broken links", "Verify all images load", "Test form validation"
+
+## How it works
+
+1. Describe what you want to test or automate.
+2. The agent writes custom Playwright code for the task.
+3. The universal executor (`run.js`) runs it with proper module resolution.
+4. The browser opens (visible by default) and the automation executes.
+5. Results — console output and screenshots — are returned.
+
+## Configuration defaults
+
+- `headless: false` — browser is visible unless explicitly requested otherwise
+- Slow motion: `0ms` by default; set `SLOW_MO` when useful
+- Screenshots: helper screenshots default to the OS temp directory; set `PW_ARTIFACT_DIR` to change it
+
+## Advanced usage
+
+Claude automatically loads `API_REFERENCE.md` when it needs details on selectors, network interception, authentication, visual regression testing, mobile emulation, performance testing, or debugging.
+
+## Dependencies
+
+- Node.js
+- Playwright (installed via `npm run setup`)
+- Chromium (installed via `npm run setup`; `npm run install-all-browsers` for all browsers)
+
+## Troubleshooting
+
+- **Playwright not installed** — run `npm run setup` from the skill directory.
+- **Module not found** — make sure automation runs via `run.js`, which handles module resolution.
+- **Browser doesn't open** — confirm `headless: false`; the skill defaults to a visible browser unless headless mode is requested.
+
+## Contributing
+
+Fork, branch, make changes, submit a PR. See `CONTRIBUTING.md` in the repo for details.
 
 ## Links
 
-- Website: https://deerflow.tech
-- Repo: https://github.com/bytedance/deer-flow
-- Docs: see the repo's `docs/` directory
-- Security policy and Code of Conduct are published in the repo
+- Repo: https://github.com/lackeyjb/playwright-skill
+- Agent Skills specification: https://github.com (open spec referenced from the repo)
+- Full API reference: `skills/playwright-skill/API_REFERENCE.md` in the repo
+- Contributors: lackeyjb, claude, dependabot[bot], cderv, luantaraschi
