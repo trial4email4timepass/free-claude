@@ -1,41 +1,31 @@
-# DeerFlow — Project Notes
+# Claude-Mem — Project Notes
 
-This is reference context on [bytedance/deer-flow](https://github.com/bytedance/deer-flow) so it's loaded automatically when Claude Code opens this repo. See `README.md` for the full write-up; summary below.
+This is reference context on [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) so it's loaded automatically when Claude Code opens this repo. See `README.md` for the full write-up; summary below.
 
 ## What it is
 
-DeerFlow (Deep Exploration and Efficient Research Flow) is an open-source, long-horizon "super agent" harness (MIT license, Python backend + Node.js frontend). It orchestrates sub-agents, memory, and sandboxes via tools and extensible skills to research, code, and create over tasks lasting minutes to hours. v2.0 is a ground-up rewrite sharing no code with v1 (v1 lives on the `1.x` branch).
+Claude-Mem is a persistent-memory layer for Claude Code (Apache-2.0). It captures what happens in a session, compresses it into semantic summaries, and injects relevant context back into future sessions — so Claude doesn't re-read the project from scratch each time. Also works with Gemini CLI, OpenCode, and OpenClaw.
 
 ## Core capabilities
 
-- Sub-agents for decomposing long-horizon tasks
-- Sandbox execution (Docker/container, provisioner, or E2B-backed)
-- Long-term memory
-- Skills & tools (`.agent/skills`) plus MCP server integration
-- A Gateway service owning the agent runtime, SSE streaming, and run lifecycle
-- IM channel integrations and Claude Code (OAuth) provider support
+- Persistent memory across sessions, no manual saving
+- Local web viewer at `http://localhost:37777`
+- `mem-search` — natural-language query over project history
+- Smart Explore (`smart_search`, `smart_outline`, `smart_unfold`) — AST-based code navigation returning exact symbols instead of whole files; the main source of token savings
+- `<private>` tags exclude content from storage
 
-## Getting started
+## Install
 
 ```bash
-git clone https://github.com/bytedance/deer-flow.git
-cd deer-flow
-make setup   # interactive wizard -> config.yaml + .env
-make dev     # or: make docker-start / make up (prod)
+npx claude-mem install       # registers hooks + worker service
 ```
 
-Default local URL: `http://localhost:2026`. Use `make doctor` to validate setup and `make support-bundle` when filing issues.
+or as a plugin: `/plugin marketplace add thedotmack/claude-mem` then `/plugin install claude-mem`. Restart Claude Code afterward. Requires Node 18+, Bun, uv, SQLite (auto-installed if missing). `npm install -g claude-mem` alone does **not** wire up the hooks.
 
-## Sizing quick reference
+**Not installed in this repo** — the installer starts a persistent background worker and registers global session hooks, which is a system-wide change out of scope for this notes-only setup.
 
-- Local eval: 4 vCPU/8GB min, 8 vCPU/16GB recommended
-- Docker dev: 4 vCPU/8GB min, 8 vCPU/16GB recommended
-- Long-running server: 8 vCPU/16GB min, 16 vCPU/32GB recommended
+## Benchmark headline
 
-## Production notes
+Maker's benchmark (Smart Explore vs. standard Explore agent, same 194-file codebase, Opus 4.6): ~17.8x cheaper to find code, ~19.4x cheaper to read specific functions, 10-30x faster overall — the source of the "~95% fewer tokens" claim. Scoped to one benchmark; not a universal per-session savings figure.
 
-- Gateway defaults to a single worker; multi-worker needs Postgres + Redis stream bridge + run-ownership heartbeats + DB-backed event store.
-- Login uses HttpOnly cookies; passwords are never stored client-side.
-- Split-origin browser clients need `GATEWAY_CORS_ORIGINS` set explicitly (same-origin nginx has no CORS headers by default).
-
-Links: [deerflow.tech](https://deerflow.tech) · [github.com/bytedance/deer-flow](https://github.com/bytedance/deer-flow)
+Links: [github.com/thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)
