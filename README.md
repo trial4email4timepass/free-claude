@@ -85,3 +85,24 @@ These cover DeerFlow itself; a self-hosted LLM needs its own sizing.
 - Repo: https://github.com/bytedance/deer-flow
 - Docs: see the repo's `docs/` directory
 - Security policy and Code of Conduct are published in the repo
+
+## Superpowers skills framework
+
+This repo also vendors the [Superpowers](https://github.com/obra/superpowers)
+skills framework for Claude Code (v6.3.0), so any Claude Code session opened
+against this repo has the full skills library available:
+
+- `.claude/skills/` — the Superpowers skill library (TDD, systematic
+  debugging, brainstorming, subagent-driven development, code review, and
+  more), vendored as project-level skills alongside this repo's other
+  skills (e.g. `perplexity-search`). Discoverable via the `Skill` tool.
+- `.claude/hooks/session-start` — bootstrap hook (adapted from Superpowers'
+  own plugin hook) that injects the `using-superpowers` skill as context at
+  the start of every session. Wired up in `.claude/settings.json` alongside
+  the existing `session-start.sh` hook — both run.
+- `.claude/THIRD_PARTY_NOTICE_superpowers_LICENSE` — the upstream MIT
+  license.
+
+To pick up upstream updates, re-sync `.claude/skills/` (excluding
+`perplexity-search`, which is this repo's own) from the [upstream `skills/`
+directory](https://github.com/obra/superpowers/tree/main/skills).
