@@ -216,3 +216,32 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## Agent Reach (full vendor)
+
+`.claude/vendor/agent-reach/` is a complete, unmodified copy of
+[Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach) v1.5.0
+(MIT, `LICENSE` included) — a Python CLI + library that routes an AI agent's
+web/social-platform reads (Twitter/X, Reddit, YouTube, GitHub, Bilibili,
+Xiaohongshu, LinkedIn, RSS, web pages, Exa search, and more) to whichever
+upstream tool currently works for that platform, with a `doctor` command to
+show which backend is active per platform. It's a routing/installer layer,
+not a wrapper: once configured, the agent calls the upstream CLIs/APIs
+directly.
+
+- `.claude/skills/agent-reach/` — the project's own `SKILL.md` (+
+  `SKILL_en.md` and `references/*.md`) surfaced as a project-level skill, so
+  any Claude Code session opened against this repo can discover it via the
+  `Skill` tool. It documents the per-platform command routing table and the
+  zero-config vs. login-required channels.
+- The skill assumes the `agent-reach` CLI itself is installed and on `PATH`
+  (`pip install -e .claude/vendor/agent-reach`, or follow
+  [`docs/install.md`](.claude/vendor/agent-reach/docs/install.md) for the
+  full guided setup) — vendoring the source here does not install it.
+  `agent-reach doctor --json` reports which backend is active per platform
+  once installed.
+- Platforms needing login (Twitter/X, Xiaohongshu, Reddit, Facebook,
+  Instagram) require the user's own cookies/session, configured via
+  `agent-reach configure <channel>`; nothing here logs in on your behalf.
+  See the project's own [`SECURITY.md`](.claude/vendor/agent-reach/SECURITY.md)
+  for its credential-handling and cookie-safety notes.
