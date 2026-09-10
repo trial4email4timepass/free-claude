@@ -18,11 +18,11 @@ allowed-tools:
   - Bash(git *)
   - Bash(GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0 git *)
   - Bash(find . -maxdepth 1 -type d -name "CLAUDE-SECURITY-2*")
-  - Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render_report.py" *)
-  - Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/save_result.py" *)
-  - Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/write_scan_meta.py" *)
-  - Bash(bash "${CLAUDE_PLUGIN_ROOT}/scripts/keep-waiting.sh" *)
-  - Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/patch_artifacts.py" *)
+  - Bash(python3 "${CLAUDE_SKILL_DIR}/scripts/render_report.py" *)
+  - Bash(python3 "${CLAUDE_SKILL_DIR}/scripts/save_result.py" *)
+  - Bash(python3 "${CLAUDE_SKILL_DIR}/scripts/write_scan_meta.py" *)
+  - Bash(bash "${CLAUDE_SKILL_DIR}/scripts/keep-waiting.sh" *)
+  - Bash(python3 "${CLAUDE_SKILL_DIR}/scripts/patch_artifacts.py" *)
   - Bash(sleep *)
   - Bash(GIT_TERMINAL_PROMPT=0 git *)
 ---
@@ -48,7 +48,7 @@ This is the front desk. Its whole purpose is to work out which job the user want
 
 ## Environment and Paths (substituted at invocation, use verbatim)
 
-- [SCRIPTS — helper scripts directory](${CLAUDE_PLUGIN_ROOT}/scripts)
+- [SCRIPTS — helper scripts directory](${CLAUDE_SKILL_DIR}/scripts)
 - [REPORT SPEC (the report's shape)](${CLAUDE_SKILL_DIR}/specs/report-spec.md)
 - [PATCH SPEC (the patch products contract)](${CLAUDE_SKILL_DIR}/specs/patch-spec.md)
 
