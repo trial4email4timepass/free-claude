@@ -178,6 +178,25 @@ own directory (not at the repo root), so none of them are auto-loaded —
 Claude Code only reads a root-level `.mcp.json`. They're there for
 reference/copy-in if you want to wire one up.
 
+## claudex-loop (full vendor)
+
+This repo also vendors [chaseai-yt/claudex-loop](https://github.com/chaseai-yt/claudex-loop)
+(MIT, `.claude/THIRD_PARTY_NOTICE_claudex-loop_LICENSE`) — model-routing and
+cross-model plan/build/review workflow skills for working across Claude Code
+and Codex.
+
+- `.claude/vendor/claudex-loop/` — a complete, unmodified copy (manifest,
+  skills, scripts, tests, `legacy/` compatibility skills, its own
+  `LICENSE`/`README`). This is the source of truth; everything below is
+  derived from it.
+- **Skills** — surfaced into `.claude/skills/`: `claudex-route` (model
+  recommendation and one-off handoffs, self-contained), `claudex-loop`
+  (independent Claude/Codex plan review, then build and cross-inspection),
+  and the explicit-provider compatibility entry points `codex-build` and
+  `codex-review` (both depend on the sibling `claudex-loop` skill for shared
+  references and the runner).
+- No commands, agents, or hooks are bundled with this plugin — skills only.
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
