@@ -1,90 +1,79 @@
-# DeerFlow — Repo Overview
+# Claude-Mem — Persistent Memory for Claude Code
 
-Notes on [bytedance/deer-flow](https://github.com/bytedance/deer-flow), based on its GitHub repository page and README.
+Notes on [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem), based on the maker's write-up.
 
 ## What it is
 
-DeerFlow (**D**eep **E**xploration and **E**fficient **R**esearch **Flow**) is an open-source, long-horizon "super agent" harness. It orchestrates sub-agents, memory, and sandboxes — via tools and extensible skills — to research, code, and create over tasks that can run from minutes to hours.
+Claude-Mem is a persistent-memory layer for Claude Code. Without it, every new session starts cold — Claude re-reads the project to get back up to speed, which is slow and burns tokens. Claude-Mem quietly captures what happens during a session, compresses it with AI into semantic summaries, and injects the relevant bits back into future sessions, so context survives across restarts.
 
-- License: MIT
-- Site: [deerflow.tech](https://deerflow.tech)
-- Stack: Python (backend) + Node.js (frontend)
-- ~81.8k stars / ~11.3k forks at time of writing; #1 on GitHub Trending following the v2 launch (Feb 28, 2026)
-
-**Important:** v2.0 is a ground-up rewrite and shares no code with v1. The original Deep Research framework is preserved on the `1.x` branch (still open to contributions); active development is on `2.0`.
+- License: Apache-2.0
+- Install: `npx claude-mem install`
+- ~77k+ stars, Trendshift-listed, listed in Awesome Claude Code
+- Also works with Gemini CLI, OpenCode, and OpenClaw — not just Claude Code
+- By Alex Newman ([@thedotmack](https://github.com/thedotmack))
 
 ## Core capabilities
 
-- **Sub-agents** — decomposes long-horizon tasks across coordinated agents
-- **Sandbox execution** — Docker/container, provisioner, or E2B-backed sandboxes for isolated code/tool execution
-- **Long-term memory** — persistent memory store surfaced in Settings
-- **Skills & tools** — extensible skill system (`.agent/skills`) plus MCP server integration
-- **Message gateway** — a Gateway service that owns the agent runtime, SSE streaming, and run lifecycle (including multi-worker coordination via Redis/Postgres)
-- **IM channel integrations** and **Claude Code integration** (OAuth-backed CLI provider support)
+- **Persistent memory** — context survives across sessions automatically, no manual saving
+- **Local web viewer** at `http://localhost:37777` — watch the memory stream in real time
+- **`mem-search`** — query project history in natural language
+- **Smart Explore** — AST-based code navigation (`smart_search`, `smart_outline`, `smart_unfold`) that returns exact symbols instead of whole files; this is where most of the token savings come from
+- **Privacy control** — wrap anything in `<private>` tags and it's never stored
 
-## Sister projects
+## How it works
 
-- **LLM Space** — a desktop tool for prototyping agent ideas, inspecting harness steps, replaying failures, and benchmarking performance.
-- **InfoQuest** — an intelligent search/crawling toolset from BytePlus, newly integrated into DeerFlow (free online experience available).
+- Lifecycle hooks (`SessionStart`, `UserPromptSubmit`, `PostToolUse`, `Stop`, `SessionEnd`) watch the session and record what Claude does
+- A worker service + SQLite store sessions, observations, and summaries; a Chroma vector DB powers hybrid semantic + keyword search
+- On session start, relevant past context is injected back in with progressive disclosure, loading only what's needed
+- Search uses a 3-layer flow — `search` → `timeline` → `get_observations` — fetching full detail only for the IDs actually needed (~10x savings over dumping everything)
 
-## Getting started
-
-### One-line agent setup
-
-For coding agents (Claude Code, Codex, Cursor, Windsurf, etc.):
-
-> Help me clone DeerFlow if needed, then bootstrap it for local development by following https://raw.githubusercontent.com/bytedance/deer-flow/main/Install.md
-
-### Manual quick start
+## Quick start
 
 ```bash
-git clone https://github.com/bytedance/deer-flow.git
-cd deer-flow
-make setup   # interactive wizard: LLM provider, web search, sandbox/bash/file-write prefs
+# Install (registers the memory hooks + worker service)
+npx claude-mem install
 ```
 
-`make setup` writes a minimal `config.yaml` and `.env`. Use `make doctor` to validate the setup, and `make config` for the full config template (`config.example.yaml`) if you want to hand-edit things like CLI-backed providers, OpenRouter, or subagent runtime caps.
+Or as a Claude Code plugin:
 
-### Running it
+```bash
+/plugin marketplace add thedotmack/claude-mem
+/plugin install claude-mem
+```
 
-Two supported paths, each with a dev and prod mode:
+Restart Claude Code afterward; context from previous sessions then shows up automatically in new ones.
 
-| | Local | Docker |
-|---|---|---|
-| Dev | `make dev` (hot-reload) | `make docker-start` |
-| Prod | `make start` | `make up` |
+Requires Node 18+, plus Bun, uv, and SQLite (auto-installed if missing).
 
-- Docker is the recommended path, especially for a persistent server (Linux + Docker preferred over macOS/Windows for that use case).
-- Local dev requires Node.js 22+, pnpm, uv, and nginx (`make check` verifies these) and a valid `config.yaml` (from `make setup`).
-- Default access URL: `http://localhost:2026`.
+**Not set up in this repo.** `npx claude-mem install` registers global session hooks and starts a persistent background worker on port 37777 — a system-wide, hard-to-reverse change beyond what this notes-only setup should do unattended. Run it yourself locally if you want the memory layer active.
 
-## Deployment sizing
+## The Smart Explore benchmark
 
-| Target | Starting point | Recommended |
-|---|---|---|
-| Local eval / `make dev` | 4 vCPU, 8 GB RAM, 20 GB SSD | 8 vCPU, 16 GB RAM |
-| Docker dev / `make docker-start` | 4 vCPU, 8 GB RAM, 25 GB SSD | 8 vCPU, 16 GB RAM |
-| Long-running server / `make up` | 8 vCPU, 16 GB RAM, 40 GB SSD | 16 vCPU, 32 GB RAM |
+From the maker's benchmark — Smart Explore vs. the standard Explore agent, same codebase (Claude-Mem's own 194-file repo), same model (Opus 4.6):
 
-These cover DeerFlow itself; a self-hosted LLM needs its own sizing.
+| Task | Smart Explore | Explore agent | Advantage |
+|---|---|---|---|
+| Find code across the repo | ~14,200 tokens | ~252,500 tokens | 17.8x cheaper |
+| Read specific functions | ~5,650 tokens | ~109,400 tokens | 19.4x cheaper |
+| Find + read (end to end) | ~4,200 tokens | ~45,000 tokens | 10-12x cheaper |
+| Speed | Under 2s/call | 5-66s/call | 10-30x faster |
 
-## Production notes worth knowing
+That's where the "up to ~95% fewer tokens" figure comes from (17.8x cheaper ≈ 94% less). Smart Explore was also more complete — the standard agent truncated the longest function; Smart Explore returned it in full.
 
-- The Gateway keeps active runs in-process, so production defaults to a **single worker** (`GATEWAY_WORKERS=1`). Multi-worker setups require Postgres, a Redis stream bridge, run-ownership heartbeats, and a DB-backed event store.
-- Persistent deployments configure `database.backend` as `sqlite` or `postgres`, shared across the LangGraph checkpointer/store and DeerFlow's own data.
-- Login uses HttpOnly session cookies; "keep me signed in" only extends sessions over HTTPS or localhost HTTP. Passwords are never stored client-side.
-- The bundled nginx endpoint is same-origin by default; split-origin browser clients need `GATEWAY_CORS_ORIGINS` set explicitly.
+**Caveat:** these numbers are from one benchmark — code-navigation tools vs. a standard Explore agent — not "every session is 95% cheaper." Results depend on the codebase and how it's searched.
 
-## Support & diagnostics
+## Gotchas
 
-`make doctor` for setup checks; `make support-bundle` generates an issue summary, an AI-assist draft, and an optional redacted evidence zip for filing GitHub issues.
+- `npm install -g claude-mem` only installs the SDK — it does **not** wire up the memory hooks. Use `npx claude-mem install`.
+- Installed but no memory appears → reinstall with `npx claude-mem install`, then restart Claude Code.
+- Nothing on `localhost:37777` → the worker didn't start; restart Claude Code so the hooks boot it.
+- Windows `npm` not recognized → install Node from nodejs.org and restart the terminal.
+- Unrelated to the tool itself: there's a 3rd-party `$CMEM` Solana memecoin the creator has "embraced." It isn't needed to use Claude-Mem — the tool is free and open-source.
 
 ## Links
 
-- Website: https://deerflow.tech
-- Repo: https://github.com/bytedance/deer-flow
-- Docs: see the repo's `docs/` directory
-- Security policy and Code of Conduct are published in the repo
+- Repo: https://github.com/thedotmack/claude-mem
+- License: Apache-2.0
 
 ## Superpowers skills framework
 
