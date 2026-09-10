@@ -7,7 +7,7 @@ whenever Claude Code opens this repo:
 |---|---|---|
 | `firecrawl` | [`firecrawl-mcp`](https://github.com/firecrawl/firecrawl-mcp-server) | Web scraping / search |
 | `playwright` | [`@playwright/mcp`](https://github.com/microsoft/playwright-mcp) | Browser automation |
-| `perplexity-ask` | [`server-perplexity-ask`](https://github.com/perplexityai/modelcontextprotocol) | Perplexity Sonar search |
+| `perplexity` | `@perplexity-ai/mcp-server` | Perplexity search (see the `perplexity-search` skill) |
 | `composio` | [Composio Connect](https://docs.composio.dev/docs/composio-connect) (`https://connect.composio.dev/mcp`) | Access to 1000+ third-party app integrations |
 
 ## Setup
@@ -17,7 +17,7 @@ references them via `${VAR}` expansion, so no secrets are stored in the repo:
 
 ```bash
 export FIRECRAWL_API_KEY="..."     # https://www.firecrawl.dev
-export PERPLEXITY_API_KEY="..."    # https://www.perplexity.ai/settings/api
+export PERPLEXITY_API_KEY="..."    # https://docs.perplexity.ai/docs/getting-started/integrations/mcp-server
 export COMPOSIO_API_KEY="..."      # https://app.composio.dev
 ```
 
