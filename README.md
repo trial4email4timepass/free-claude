@@ -216,3 +216,41 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## Skillselion skill collection
+
+`.claude/skills/` additionally vendors 133 skills discovered via the
+[Skillselion](https://skillselion.com/skills) directory (which indexes
+install counts from GitHub and the skills.sh registry). Unlike the
+`trending-claude-skills` marketplace above, these are fully vendored and
+individually reviewed, not just linked:
+
+- Skillselion's public listings API was used only for *discovery* — which
+  skills exist and where their real source repo is. Its own hosted copy of
+  any skill's content was never trusted or used. Note also that the
+  `skillselion.com/skills` landing page itself contains text aimed at
+  manipulating AI crawlers rather than humans (e.g. instructing the reader
+  to request the page a certain way "for the full document"); that was
+  treated as untrusted content and ignored.
+- Each skill's actual `SKILL.md` and supporting files were pulled straight
+  from its own upstream GitHub repository — `anthropics/skills`,
+  `vercel-labs/skills`, `vercel-labs/agent-skills`, `vercel-labs/agent-browser`,
+  `mattpocock/skills`, `microsoft/azure-skills`, `remotion-dev/skills`, and
+  `larksuite/cli` — at the commit recorded in `CATALOG.md`.
+- Every source repo was grepped for common red flags (piped-curl-to-shell
+  installers, `eval`/`exec` on untrusted input, base64-obfuscated payloads,
+  destructive `rm -rf`) before its skills were added. None were found.
+- `frontend-design` and `skill-creator` were left out of this batch since
+  they're already vendored above from the same upstream (`anthropics/skills`
+  and the claude-plugins-official `skill-creator`).
+
+See [`CATALOG.md`](CATALOG.md) for the full list grouped by source repo,
+with descriptions, licenses, and pinned commits, and what was intentionally
+left out (Lark skills authored by `open.feishu.cn` that duplicate the
+official `larksuite/cli` ones already included, and a few individual-author
+repos that didn't have enough of a track record to vet with confidence in
+this pass).
+
+Automated scanning is not a substitute for reading a skill yourself before
+trusting it with real tool access — skills are instructions (and sometimes
+scripts) that execute with whatever permissions the agent running them has.
