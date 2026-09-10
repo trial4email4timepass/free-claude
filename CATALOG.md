@@ -4,7 +4,7 @@ Skills under `.claude/skills/` in this repo, discovered via the [Skillselion](ht
 
 Every skill listed here was reviewed for obviously malicious patterns (piped-curl installers, `eval`/`exec` on remote input, credential exfiltration, destructive `rm -rf`) before being added. None were found. That is not a substitute for reading a skill before you let it act with real tool access — read `SKILL.md` for anything you plan to actually use.
 
-**Total skills:** 135  
+**Total skills:** 133 (135 discovered; 2 skipped as already vendored elsewhere in this repo — see below)  
 **Collected:** 2026-09-10
 
 ## Sources
@@ -20,7 +20,9 @@ Every skill listed here was reviewed for obviously malicious patterns (piped-cur
 | [larksuite/cli](https://github.com/larksuite/cli) | MIT | `4203560c761b` |
 | [remotion-dev/skills](https://github.com/remotion-dev/skills) | Unspecified in repo | `9ae8048a8469` |
 
-## anthropics/skills (19)
+## anthropics/skills (17)
+
+`frontend-design` and `skill-creator` are also from this repo but are skipped here — already vendored at the repo root from an earlier PR (see the "Skillselion skill collection" section of `README.md`).
 
 | Skill | Description |
 |---|---|
@@ -32,12 +34,10 @@ Every skill listed here was reviewed for obviously malicious patterns (piped-cur
 | [`discernment-nudge`](.claude/skills/discernment-nudge/SKILL.md) | After you give a substantive answer or draft that the user may act on — advice or recommendations, drafted artifacts such as goals, plans, pitches, proposals... |
 | [`doc-coauthoring`](.claude/skills/doc-coauthoring/SKILL.md) | Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision do... |
 | [`docx`](.claude/skills/docx/SKILL.md) | Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files) or Word templates (.dotx files). Triggers include: a... |
-| [`frontend-design`](.claude/skills/frontend-design/SKILL.md) | Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making... |
 | [`internal-comms`](.claude/skills/internal-comms/SKILL.md) | A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenev... |
 | [`mcp-builder`](.claude/skills/mcp-builder/SKILL.md) | Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use whe... |
 | [`pdf`](.claude/skills/pdf/SKILL.md) | Use this skill whenever the user wants to do anything with PDF files. This includes reading or extracting text/tables from PDFs, combining or merging multipl... |
 | [`pptx`](.claude/skills/pptx/SKILL.md) | Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presen... |
-| [`skill-creator`](.claude/skills/skill-creator/SKILL.md) | Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize a... |
 | [`slack-gif-creator`](.claude/skills/slack-gif-creator/SKILL.md) | Knowledge and utilities for creating animated GIFs optimized for Slack. Provides constraints, validation tools, and animation concepts. Use when users reques... |
 | [`theme-factory`](.claude/skills/theme-factory/SKILL.md) | Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors... |
 | [`web-artifacts-builder`](.claude/skills/web-artifacts-builder/SKILL.md) | Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui). Use ... |
