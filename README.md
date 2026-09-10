@@ -177,3 +177,48 @@ Each `external_plugins/<name>/.mcp.json` is vendored inside that plugin's
 own directory (not at the repo root), so none of them are auto-loaded —
 Claude Code only reads a root-level `.mcp.json`. They're there for
 reference/copy-in if you want to wire one up.
+
+### Known limitation: `claude-security` skill needs the real plugin
+
+`.claude/skills/claude-security/` is a full orchestrator skill (menu +
+jobs + scripts), not just docs, and its `allowed-tools` frontmatter
+references `Workflow(claude-security:scan)` and several
+`Agent(claude-security:...)` entries using the `plugin-name:component-name`
+colon namespace. That namespace only resolves when the plugin is actually
+installed (`/plugin install claude-security@claude-plugins-official`) —
+project-level skills/agents vendored here don't get it, so this skill
+won't fully run standalone even though its script/spec paths are now
+fixed. `.claude/skills/mcp-integration`, `command-development`,
+`plugin-structure`, and `hook-development` also mention
+`${CLAUDE_PLUGIN_ROOT}` throughout, but only as *teaching material* about
+that variable for someone authoring a new plugin — not broken
+self-references, so those were left as-is.
+
+## knowledge-work-plugins (selected)
+
+Also vendors 4 of the 11 role-based plugins from
+[anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins)
+(Apache 2.0, `.claude/THIRD_PARTY_NOTICE_knowledge-work-plugins_LICENSE`) —
+picked for general usefulness rather than a specific job function (the
+other 7 — sales, legal, finance, customer-support, product-management,
+marketing, bio-research — are role-specific and weren't added):
+
+- **productivity** — task/memory management, a `dashboard.html` UI.
+  Skills: `task-management`, `memory-management`, `start`, `update`.
+- **data** — SQL, data exploration, visualization, dashboards. Skills:
+  `sql-queries`, `explore-data`, `validate-data`, `statistical-analysis`,
+  `data-visualization`, `create-viz`, `build-dashboard`,
+  `data-context-extractor`, `analyze`, `write-query`.
+- **enterprise-search** — search across company tools in one query.
+  Skills: `search`, `search-strategy`, `digest`, `source-management`,
+  `knowledge-synthesis`.
+- **cowork-plugin-management** — create/customize plugins for your own
+  org's tools. Skills: `create-cowork-plugin`, `cowork-plugin-customizer`.
+
+As with `claude-plugins-official`, each plugin is fully vendored under
+`.claude/vendor/knowledge-work-plugins/<name>/` (including its
+`.mcp.json`, inert here since it isn't at the repo root), with its
+`skills/` surfaced into `.claude/skills/`. `productivity`'s `start` and
+`task-management` skills share a `dashboard.html` template that lived at
+the plugin's `skills/` root rather than inside either skill folder — it's
+now copied into both vendored skill directories so each is self-contained.
