@@ -106,3 +106,11 @@ against this repo has the full skills library available:
 To pick up upstream updates, re-sync `.claude/skills/` (excluding
 `perplexity-search`, which is this repo's own) from the [upstream `skills/`
 directory](https://github.com/obra/superpowers/tree/main/skills).
+
+## frontend-design skill
+
+`.claude/skills/frontend-design/` vendors the `frontend-design` skill from
+[anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design)
+(Apache 2.0, `LICENSE.txt` included) — guidance for distinctive, intentional
+visual design when building or reshaping a UI, so Claude Code reaches for it
+on frontend/design work instead of defaulting to templated layouts.
