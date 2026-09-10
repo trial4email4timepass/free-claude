@@ -6,6 +6,15 @@
       "env": {
         "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
       }
+    },
+    "obsidian": {
+      "command": "uvx",
+      "args": ["mcp-obsidian"],
+      "env": {
+        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
+        "OBSIDIAN_HOST": "${OBSIDIAN_HOST:-127.0.0.1}",
+        "OBSIDIAN_PORT": "${OBSIDIAN_PORT:-27124}"
+      }
     }
   }
 }
