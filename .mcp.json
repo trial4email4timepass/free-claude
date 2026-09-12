@@ -1,10 +1,15 @@
 {
   "mcpServers": {
     "perplexity": {
-      "command": "npx",
-      "args": ["-y", "@perplexity-ai/mcp-server"],
+      "command": "uv",
+      "args": [
+        "run",
+        "--project", ".claude/vendor/perplexity-ai",
+        "--extra", "mcp",
+        "perplexity-mcp"
+      ],
       "env": {
-        "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
+        "PERPLEXITY_COOKIES": "${PERPLEXITY_COOKIES}"
       }
     }
   }
