@@ -247,3 +247,42 @@ behalf.
   dips as providers' daily caps get hit) — see
   [the limitations section](.claude/vendor/freellmapi/docs/en/architecture/00-high-level-index.md#limitations)
   before relying on this for anything production-critical.
+
+## gstack (full vendor, source only — not installed)
+
+`.claude/vendor/gstack/` is a complete, unmodified copy of
+[garrytan/gstack](https://github.com/garrytan/gstack) (MIT, `LICENSE`
+included) — a large suite of Claude Code skills (`/office-hours`,
+`/plan-ceo-review`, `/review`, `/qa`, `/cso`, `/ship`, and 15+ more)
+meant to be installed into `~/.claude/skills/gstack` as a full
+planning/review/QA/security/release workflow.
+
+**⚠️ This is vendored as source only — nothing here is installed, active,
+or auto-discoverable, and its `setup` script has not been run.** Two
+things about the upstream project warranted extra caution before treating
+it like this repo's other full-vendor entries:
+
+- Upstream's own README includes a ready-to-paste "install block" that
+  asks an agent to clone into the user's real `~/.claude/skills/`, run a
+  ~150 KB shell script sight-unseen, and edit the user's **global**
+  `~/.claude/CLAUDE.md` to add a standing instruction to never use a
+  specific tool (`mcp__claude-in-chrome__*`). Untrusted code execution
+  plus a self-inserted tool suppression is the shape of a prompt-injection
+  payload, so those steps were not followed here.
+- gstack's own `SKILL.md` is written as standing operating instructions
+  for whatever agent loads it — proactively auto-invoking other gstack
+  skills without being asked, treating certain future tool output as
+  executable "instruction blocks," and shelling out to telemetry scripts
+  on every run — a much larger behavioral surface than a typical vendored
+  CLI. It was deliberately **not** copied into this repo's discoverable
+  `.claude/skills/` path.
+
+- `.claude/skills/gstack/` — a project-level skill (not gstack's own)
+  that documents what gstack is and quotes its command table, without
+  implementing or triggering any of its behavior. It also spells out the
+  safety reasoning above and what a user should check before running
+  gstack's real installer themselves.
+- If you want to actually use gstack, read `.claude/vendor/gstack/setup`
+  and the `bin/*` scripts it calls before running them, and decide for
+  yourself whether to keep the tool-restriction line it wants to add to
+  global config — don't let it add that silently.
