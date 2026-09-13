@@ -1,0 +1,104 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testpy:
+    strategy:
+      matrix:
+        pyvsn:
+          - 'pypy3.11'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
+        os:
+          - 'macos-14'  # arm64
+          - 'macos-15'  # arm64
+          - 'macos-15-intel'  # x86_64
+          - 'macos-26'  # arm64 beta
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      with:
+        fetch-depth: 1
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+      with:
+        python-version: ${{ matrix.pyvsn }}
+    - name: run easy API
+      run: |
+        cd yt_dlp_plugins/webkit_jsi
+        ulimit -c unlimited
+        sudo chmod a+rw /cores
+        python -m examples.run_easy || {
+          r=$?
+          echo "::warning::Failure with $r, rerunning with logs"
+          python -m examples.run
+          test -L "${{ github.workspace }}/core"
+          exit $r
+        }
+    - if: failure()
+      run: >
+        lldb -c core --batch
+        -o 'settings set target.x86-disassembly-flavor intel'
+        -o 'thread backtrace all'
+        -o 'register read'
+        -o 'disassemble --pc --count 50'
+        | tee st.txt
+    - if: failure()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: ${{ matrix.os }}-${{ matrix.pyvsn }}-bt
+        path: st.txt
+        compression-level: 9
+    - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282  # v2.0.4
+      with:
+        deno-version: v2.x
+    - name: test yt-dlp works
+      run: |
+        set -euo pipefail
+        python -m venv .ve
+        . .ve/bin/activate
+        git clone --depth 1 "https://github.com/yt-dlp/yt-dlp"
+        cd yt-dlp
+        pip install .. .[default] pytest
+        git apply ../patches/ytest.diff
+        lldb --batch \
+          -o 'settings set target.process.stop-on-exec false' \
+          -o 'run' \
+          -- python -m pytest test/test_jsc/test_ejs_integration.py
+        python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
+          --extractor-args "youtube:jsc_trace=false" \
+          dQw4w9WgXcQ dQw4w9WgXcQ
+  c:
+    if: 0
+    strategy:
+      matrix:
+        os:
+          - 'macos-14'  # arm64
+          - 'macos-15'  # arm64
+          - 'macos-15-intel'  # x86_64
+          - 'macos-26'  # arm64 beta
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 1
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      with:
+        fetch-depth: 1
+    # - name: dump asm
+    #   run: |
+    #     cd misc
+    #     clang -O2 -S -masm=intel --std=c99 -Wall -Wextra -pedantic -Wno-unused-but-set-variable -Wno-cast-function-type -Wno-unused-parameter -fblocks -fno-objc-arc super.m
+    #     cat super.s
+    - run: |
+        cd misc
+        make hello && ./hello
