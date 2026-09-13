@@ -216,3 +216,34 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## FreeLLMAPI (full vendor)
+
+`.claude/vendor/freellmapi/` is a complete, unmodified copy of
+[tashfeenahmed/freellmapi](https://github.com/tashfeenahmed/freellmapi)
+(MIT, `LICENSE` included) — a self-hosted, OpenAI-compatible router that
+aggregates free tiers from 34+ LLM providers (Google, Groq, Cerebras,
+Mistral, OpenRouter, Cloudflare, Cohere, Z.ai, NVIDIA, HuggingFace, and
+more) behind a single `/v1` API, plus a native Anthropic Messages surface
+so Claude Code can point at it directly. It routes requests to the
+best-available free model/key and falls over to the next one on
+rate-limit/error, tracking per-key usage so you stay under every provider's
+free-tier cap. Provider keys stay local, AES-256-GCM encrypted in a SQLite
+database — nothing here supplies keys or talks to providers on your
+behalf.
+
+- `.claude/skills/freellmapi/` — a project-level skill (not shipped by the
+  upstream project) surfacing how to run the router
+  (`npm install && npm run dev`, or Docker) and wire Claude Code to it via
+  `npx freellmapi setup-claude`, discoverable via the `Skill` tool in any
+  Claude Code session opened against this repo.
+- Vendoring the source here does not start the server or configure
+  anything automatically; see
+  [`docs/en/install/01-install.md`](.claude/vendor/freellmapi/docs/en/install/01-install.md)
+  for full setup and
+  [`docs/en/clients/01-agent-clients.md`](.claude/vendor/freellmapi/docs/en/clients/01-agent-clients.md)
+  for the per-agent connection table.
+- Free tiers have real trade-offs (no SLA, variable latency, capacity that
+  dips as providers' daily caps get hit) — see
+  [the limitations section](.claude/vendor/freellmapi/docs/en/architecture/00-high-level-index.md#limitations)
+  before relying on this for anything production-critical.
