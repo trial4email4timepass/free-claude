@@ -286,3 +286,60 @@ it like this repo's other full-vendor entries:
   and the `bin/*` scripts it calls before running them, and decide for
   yourself whether to keep the tool-restriction line it wants to add to
   global config — don't let it add that silently.
+
+## GitHub Tools & Projects Resource (reference only — no code vendored)
+
+A curated write-up of selected repositories from four external GitHub
+developers, kept here as a reading list rather than a vendored dependency —
+nothing below is cloned into this repo, and none of it is wired up as a
+skill. Compiled from each developer's public profile and repository
+READMEs; project descriptions are paraphrased rather than copied.
+**Repository names, technologies, and capabilities should be rechecked
+against the live repos before relying on this**, since open-source
+projects change.
+
+### [grqz](https://github.com/grqz) — low-level web & media tooling
+
+A contributor/maintainer in the `yt-dlp` ecosystem (listed as a triage
+maintainer on the project) working on YouTube extraction, JS challenge
+handling, and TLS/browser fingerprinting.
+
+- **[yt-dlp-apple-webkit-jsi](https://github.com/grqz/yt-dlp-apple-webkit-jsi)** — a `yt-dlp` plugin that uses Apple's WebKit framework as a JavaScript challenge provider for YouTube extraction. Python; `yt-dlp` plugin architecture; Apple WebKit.
+- **[bgutil-ytdlp-pot-provider](https://github.com/grqz/bgutil-ytdlp-pot-provider)** — generates the tokens required by YouTube's anti-abuse/request-validation mechanisms. Python/JS; protocol research and browser-behavior emulation.
+- **[ssl_imp](https://github.com/grqz/ssl_imp)** — a C/OpenSSL project reproducing Chrome's TLS fingerprint. Good reading on TLS handshakes and client fingerprinting at the network layer.
+
+### [WitherOrNot](https://github.com/WitherOrNot) — Windows internals & reverse engineering
+
+Focused on Windows Component-Based Servicing (CBS), licensing mechanisms,
+and low-level system behavior — an area with limited official
+documentation.
+
+- **[TSforge](https://github.com/massgravel/TSforge)** — activation/evaluation extension methods spanning Windows Vista through 11. C#; Windows licensing research.
+- **[UMSKT](https://github.com/UMSKT/UMSKT)** — open-source toolkit researching Microsoft pre-Vista licensing mechanisms. C++.
+- **[cbs-docs](https://github.com/WitherOrNot/cbs-docs)** — reverse-engineered documentation of Windows Component-Based Servicing architecture and image-deployment behavior.
+- **[cbsexploder](https://github.com/WitherOrNot/cbsexploder)** — a CBS client for offline Windows servicing: stage, install, uninstall, and enumerate packages in an offline image. C#.
+
+### [yuliskov](https://github.com/yuliskov) — Android TV & media software
+
+- **[SmartTube](https://github.com/yuliskov/SmartTube)** — a free, open-source Android TV/TV-box media client: SponsorBlock integration, adjustable playback speed, 8K/60fps/HDR, live chat, customizable controls, no Google Services dependency. The largest project in this list — a full user-facing app with playback, TV UX, networking, and an active community. Java/Kotlin; Retrofit/RxJava.
+- **[LeanKeyboard](https://github.com/yuliskov/LeanKeyboard)** — a keyboard built for Android TV/set-top-box remote input; multi-language, no Google Services or root required. Java.
+- **[SmartTubeLegacy](https://github.com/yuliskov/SmartTubeLegacy)** — the archived predecessor to SmartTube. JavaScript.
+
+### [stevietv](https://github.com/stevietv) — C#/.NET open-source contributions
+
+Maintains a broad profile (100+ repos, C#/JS/SQL/React/TypeScript). The
+most notable associated project:
+
+- **[Sonarr](https://github.com/Sonarr/Sonarr)** — a mature, production-scale PVR-style application for automatically managing and downloading TV series. C#/.NET; scheduling, metadata, media management, web UI. Per the source write-up, check which parts of stevietv's own profile are original work vs. contributions to projects like this one, rather than assuming full authorship.
+
+### If you want to look closer
+
+| Project | What it's good for studying |
+| --- | --- |
+| `yt-dlp-apple-webkit-jsi` | Plugin architecture + platform browser internals |
+| `ssl_imp` | Networking + TLS fingerprinting |
+| `cbs-docs` | Windows internals via reverse engineering |
+| `cbsexploder` | Turning RE findings into a systems tool |
+| `SmartTube` | Large-scale Android TV app engineering |
+| `LeanKeyboard` | TV UX + constrained-input design |
+| `Sonarr` | Production .NET/C# service architecture |
