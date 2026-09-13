@@ -1,90 +1,98 @@
-# DeerFlow — Repo Overview
+# PraisonAI — Repo Overview
 
-Notes on [bytedance/deer-flow](https://github.com/bytedance/deer-flow), based on its GitHub repository page and README.
+Notes on [MervinPraison/PraisonAI](https://github.com/MervinPraison/PraisonAI), based on its GitHub repository page and README.
 
 ## What it is
 
-DeerFlow (**D**eep **E**xploration and **E**fficient **R**esearch **Flow**) is an open-source, long-horizon "super agent" harness. It orchestrates sub-agents, memory, and sandboxes — via tools and extensible skills — to research, code, and create over tasks that can run from minutes to hours.
+PraisonAI is an open-source framework for building autonomous, self-improving AI agents — single agents or full multi-agent workforces — with built-in memory, RAG/knowledge, guardrails, and support for 100+ LLM providers. It's pitched as "Hire a 24/7 AI Workforce": agents that research, plan, code, and execute tasks, deployable in as little as 5 lines of Python or a no-code YAML file.
 
 - License: MIT
-- Site: [deerflow.tech](https://deerflow.tech)
-- Stack: Python (backend) + Node.js (frontend)
-- ~81.8k stars / ~11.3k forks at time of writing; #1 on GitHub Trending following the v2 launch (Feb 28, 2026)
+- Docs: [praison.ai/docs](https://praison.ai/docs)
+- Stack: Python 81.8%, TypeScript 13.7%, Rust 2.7%, JavaScript 1.1% (plus HTML/Shell)
+- ~9.0k stars / ~1.4k forks, 76 watchers, 873 tags, 848 releases at time of writing (latest: v4.7.7)
+- Publicly highlighted by Elon Musk (X) for its Grok 3 customer-support tutorial
 
-**Important:** v2.0 is a ground-up rewrite and shares no code with v1. The original Deep Research framework is preserved on the `1.x` branch (still open to contributions); active development is on `2.0`.
+## The five-layer agent stack
 
-## Core capabilities
+PraisonAI frames agent-building as five composable layers, each answering a different question, plus an outer "where does it run" layer:
 
-- **Sub-agents** — decomposes long-horizon tasks across coordinated agents
-- **Sandbox execution** — Docker/container, provisioner, or E2B-backed sandboxes for isolated code/tool execution
-- **Long-term memory** — persistent memory store surfaced in Settings
-- **Skills & tools** — extensible skill system (`.agent/skills`) plus MCP server integration
-- **Message gateway** — a Gateway service that owns the agent runtime, SSE streaming, and run lifecycle (including multi-worker coordination via Redis/Postgres)
-- **IM channel integrations** and **Claude Code integration** (OAuth-backed CLI provider support)
-
-## Sister projects
-
-- **LLM Space** — a desktop tool for prototyping agent ideas, inspecting harness steps, replaying failures, and benchmarking performance.
-- **InfoQuest** — an intelligent search/crawling toolset from BytePlus, newly integrated into DeerFlow (free online experience available).
+| Layer | Question | PraisonAI mechanism |
+|---|---|---|
+| 1 · Prompt | Did I say it clearly? | `instructions=`, role/goal/backstory, `output=`, templates |
+| 2 · Context | Is the right thing in the window? | `memory=`, `knowledge=`, `context=`, handoff `ContextPolicy` |
+| 3 · Harness | Can it act, and be checked? | `tools=`, `MCP()`, `guardrails=`, `approval=`, `hooks=`, `sandbox=` |
+| 4 · Loop | When do we stop? | `execution=ExecutionConfig(...)`, `reflection=`, `autonomy=`, doom-loop detection |
+| 5 · Graph | Who runs when, and who checks whom? | `AgentFlow`, `route()`, `parallel()`, `loop()`, `repeat()` |
+| ⬡ Managed | Where does it actually run? | `tools_run_on="docker"` (shared sandbox for tools) or `run_on="anthropic"` (whole agent hosted) |
 
 ## Getting started
 
-### One-line agent setup
-
-For coding agents (Claude Code, Codex, Cursor, Windsurf, etc.):
-
-> Help me clone DeerFlow if needed, then bootstrap it for local development by following https://raw.githubusercontent.com/bytedance/deer-flow/main/Install.md
-
-### Manual quick start
-
 ```bash
-git clone https://github.com/bytedance/deer-flow.git
-cd deer-flow
-make setup   # interactive wizard: LLM provider, web search, sandbox/bash/file-write prefs
+pip install praisonaiagents
+export OPENAI_API_KEY="your-api-key"
 ```
 
-`make setup` writes a minimal `config.yaml` and `.env`. Use `make doctor` to validate the setup, and `make config` for the full config template (`config.example.yaml`) if you want to hand-edit things like CLI-backed providers, OpenRouter, or subagent runtime caps.
+```python
+from praisonaiagents import Agent
 
-### Running it
+agent = Agent(instructions="You are a senior data analyst.")
+agent.start("Analyze the top 3 tech trends of 2026 and format as a markdown table.")
+```
 
-Two supported paths, each with a dev and prod mode:
+No-code YAML is also supported (`praisonai agents.yaml`) for defining and running multi-agent teams without writing Python.
 
-| | Local | Docker |
+## Ecosystem
+
+| Package | Purpose | Install |
 |---|---|---|
-| Dev | `make dev` (hot-reload) | `make docker-start` |
-| Prod | `make start` | `make up` |
+| `praisonaiagents` | Core SDK, pure Python | `pip install praisonaiagents` |
+| `praisonai` | CLI for terminal-based workflows | `pip install praisonai` |
+| Claw Dashboard 🦞 | Connect agents to Telegram/Slack/Discord/WhatsApp | `pip install "praisonai[claw]"` |
+| Flow Visual Builder | Drag-and-drop workflow creation (Langflow-based) | `pip install "praisonai[flow]"` |
+| PraisonAI UI | Lightweight chat interface | `pip install "praisonai[ui]"` |
+| JS SDK | JavaScript/Node agents | `npm install praisonai` |
 
-- Docker is the recommended path, especially for a persistent server (Linux + Docker preferred over macOS/Windows for that use case).
-- Local dev requires Node.js 22+, pnpm, uv, and nginx (`make check` verifies these) and a valid `config.yaml` (from `make setup`).
-- Default access URL: `http://localhost:2026`.
+## Key features
 
-## Deployment sizing
+- **MCP protocol** — stdio, HTTP, WebSocket, SSE transports via `MCP(...)`
+- **Planning mode** — plan → execute → reason (`planning=True`)
+- **Deep research** — multi-step autonomous research
+- **External agent orchestration** — Claude Code, Gemini CLI, Codex
+- **Agent handoffs** — `handoffs=[other_agent]`, inherits limited context/tools rather than the full transcript
+- **Guardrails** — input/output validation
+- **Web search + fetch** — native browsing (`web=True`)
+- **Self reflection** — agent reviews its own output
+- **Workflow patterns** — route, parallel, loop, repeat (`AgentFlow`)
+- **Zero-dependency memory** — works out of the box, or backed by Postgres/MySQL/SQLite/MongoDB/Redis/20+ more via `db(...)`
+- 100+ supported LLM providers (OpenAI, Anthropic, Gemini, DeepSeek, Azure, Ollama, Groq, Mistral, Bedrock, Vertex AI, and more)
 
-| Target | Starting point | Recommended |
-|---|---|---|
-| Local eval / `make dev` | 4 vCPU, 8 GB RAM, 20 GB SSD | 8 vCPU, 16 GB RAM |
-| Docker dev / `make docker-start` | 4 vCPU, 8 GB RAM, 25 GB SSD | 8 vCPU, 16 GB RAM |
-| Long-running server / `make up` | 8 vCPU, 16 GB RAM, 40 GB SSD | 16 vCPU, 32 GB RAM |
+## Managed / sandboxed execution
 
-These cover DeerFlow itself; a self-hosted LLM needs its own sizing.
+Beyond the five layers, PraisonAI can run tools or whole agents in a remote sandbox instead of the local machine:
 
-## Production notes worth knowing
+```python
+# Only the TOOLS move (thinking stays local)
+agent = Agent(name="builder", tools_run_on="docker")   # docker | e2b | modal | daytona | flyio | tenki | sandlock | ssh | novita
 
-- The Gateway keeps active runs in-process, so production defaults to a **single worker** (`GATEWAY_WORKERS=1`). Multi-worker setups require Postgres, a Redis stream bridge, run-ownership heartbeats, and a DB-backed event store.
-- Persistent deployments configure `database.backend` as `sqlite` or `postgres`, shared across the LangGraph checkpointer/store and DeerFlow's own data.
-- Login uses HttpOnly session cookies; "keep me signed in" only extends sessions over HTTPS or localhost HTTP. Passwords are never stored client-side.
-- The bundled nginx endpoint is same-origin by default; split-origin browser clients need `GATEWAY_CORS_ORIGINS` set explicitly.
+# The WHOLE agent moves (model calls, loop, and tools)
+agent = Agent(name="teacher", run_on="anthropic")       # hosted
+```
 
-## Support & diagnostics
+`praisonai managed ps` / `praisonai managed stop --all` list and reclaim running sandboxes; a `.praisonai/environment.yaml` file lets an environment travel with the repo.
 
-`make doctor` for setup checks; `make support-bundle` generates an issue summary, an AI-assist draft, and an optional redacted evidence zip for filing GitHub issues.
+## CLI quick reference
+
+Execution, research, planning, workflows, memory, knowledge, sessions, tools, MCP, development (`commit`, `docs`, `checkpoint`, `hooks`), and 24/7 `schedule` commands are all exposed via the `praisonai` CLI — see the docs for the full reference.
+
+## Performance
+
+Agent instantiation is reported at ~14 μs on average.
 
 ## Links
 
-- Website: https://deerflow.tech
-- Repo: https://github.com/bytedance/deer-flow
-- Docs: see the repo's `docs/` directory
-- Security policy and Code of Conduct are published in the repo
+- Docs: https://praison.ai/docs
+- Repo: https://github.com/MervinPraison/PraisonAI
+- Contributing guide, Security policy, and Code of Conduct are published in the repo
 
 ## Superpowers skills framework
 
