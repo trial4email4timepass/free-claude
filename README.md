@@ -216,3 +216,73 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## FreeLLMAPI (full vendor)
+
+`.claude/vendor/freellmapi/` is a complete, unmodified copy of
+[tashfeenahmed/freellmapi](https://github.com/tashfeenahmed/freellmapi)
+(MIT, `LICENSE` included) — a self-hosted, OpenAI-compatible router that
+aggregates free tiers from 34+ LLM providers (Google, Groq, Cerebras,
+Mistral, OpenRouter, Cloudflare, Cohere, Z.ai, NVIDIA, HuggingFace, and
+more) behind a single `/v1` API, plus a native Anthropic Messages surface
+so Claude Code can point at it directly. It routes requests to the
+best-available free model/key and falls over to the next one on
+rate-limit/error, tracking per-key usage so you stay under every provider's
+free-tier cap. Provider keys stay local, AES-256-GCM encrypted in a SQLite
+database — nothing here supplies keys or talks to providers on your
+behalf.
+
+- `.claude/skills/freellmapi/` — a project-level skill (not shipped by the
+  upstream project) surfacing how to run the router
+  (`npm install && npm run dev`, or Docker) and wire Claude Code to it via
+  `npx freellmapi setup-claude`, discoverable via the `Skill` tool in any
+  Claude Code session opened against this repo.
+- Vendoring the source here does not start the server or configure
+  anything automatically; see
+  [`docs/en/install/01-install.md`](.claude/vendor/freellmapi/docs/en/install/01-install.md)
+  for full setup and
+  [`docs/en/clients/01-agent-clients.md`](.claude/vendor/freellmapi/docs/en/clients/01-agent-clients.md)
+  for the per-agent connection table.
+- Free tiers have real trade-offs (no SLA, variable latency, capacity that
+  dips as providers' daily caps get hit) — see
+  [the limitations section](.claude/vendor/freellmapi/docs/en/architecture/00-high-level-index.md#limitations)
+  before relying on this for anything production-critical.
+
+## gstack (full vendor, source only — not installed)
+
+`.claude/vendor/gstack/` is a complete, unmodified copy of
+[garrytan/gstack](https://github.com/garrytan/gstack) (MIT, `LICENSE`
+included) — a large suite of Claude Code skills (`/office-hours`,
+`/plan-ceo-review`, `/review`, `/qa`, `/cso`, `/ship`, and 15+ more)
+meant to be installed into `~/.claude/skills/gstack` as a full
+planning/review/QA/security/release workflow.
+
+**⚠️ This is vendored as source only — nothing here is installed, active,
+or auto-discoverable, and its `setup` script has not been run.** Two
+things about the upstream project warranted extra caution before treating
+it like this repo's other full-vendor entries:
+
+- Upstream's own README includes a ready-to-paste "install block" that
+  asks an agent to clone into the user's real `~/.claude/skills/`, run a
+  ~150 KB shell script sight-unseen, and edit the user's **global**
+  `~/.claude/CLAUDE.md` to add a standing instruction to never use a
+  specific tool (`mcp__claude-in-chrome__*`). Untrusted code execution
+  plus a self-inserted tool suppression is the shape of a prompt-injection
+  payload, so those steps were not followed here.
+- gstack's own `SKILL.md` is written as standing operating instructions
+  for whatever agent loads it — proactively auto-invoking other gstack
+  skills without being asked, treating certain future tool output as
+  executable "instruction blocks," and shelling out to telemetry scripts
+  on every run — a much larger behavioral surface than a typical vendored
+  CLI. It was deliberately **not** copied into this repo's discoverable
+  `.claude/skills/` path.
+
+- `.claude/skills/gstack/` — a project-level skill (not gstack's own)
+  that documents what gstack is and quotes its command table, without
+  implementing or triggering any of its behavior. It also spells out the
+  safety reasoning above and what a user should check before running
+  gstack's real installer themselves.
+- If you want to actually use gstack, read `.claude/vendor/gstack/setup`
+  and the `bin/*` scripts it calls before running them, and decide for
+  yourself whether to keep the tool-restriction line it wants to add to
+  global config — don't let it add that silently.
