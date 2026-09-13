@@ -287,16 +287,18 @@ it like this repo's other full-vendor entries:
   yourself whether to keep the tool-restriction line it wants to add to
   global config — don't let it add that silently.
 
-## GitHub Tools & Projects Resource (reference only — no code vendored)
+## GitHub Tools & Projects Resource
 
-A curated write-up of selected repositories from four external GitHub
-developers, kept here as a reading list rather than a vendored dependency —
-nothing below is cloned into this repo, and none of it is wired up as a
-skill. Compiled from each developer's public profile and repository
-READMEs; project descriptions are paraphrased rather than copied.
-**Repository names, technologies, and capabilities should be rechecked
-against the live repos before relying on this**, since open-source
-projects change.
+A curated set of repositories from four external GitHub developers, kept
+here as study material. Compiled from each developer's public profile and
+repository READMEs; project descriptions are paraphrased rather than
+copied. **Repository names, technologies, and capabilities should be
+rechecked against the live repos before relying on this**, since
+open-source projects change. Status per project:
+
+- **Vendored** — a complete, unmodified copy sits under `.claude/vendor/<name>/`, license verified beforehand (Apache-2.0, MIT, or GPLv3 — all permit redistribution of an unmodified copy with the license retained, which is what's here). Nothing vendored is installed, run, or wired up as a skill; it's source to read.
+- **Reference only (no license found)** — the upstream repo has no `LICENSE` file. Copying source with no stated license isn't clearly permitted (GitHub's own terms cover viewing/forking, not redistribution elsewhere), so these are linked, not copied.
+- **Excluded** — see the note below.
 
 ### [grqz](https://github.com/grqz) — low-level web & media tooling
 
@@ -304,9 +306,9 @@ A contributor/maintainer in the `yt-dlp` ecosystem (listed as a triage
 maintainer on the project) working on YouTube extraction, JS challenge
 handling, and TLS/browser fingerprinting.
 
-- **[yt-dlp-apple-webkit-jsi](https://github.com/grqz/yt-dlp-apple-webkit-jsi)** — a `yt-dlp` plugin that uses Apple's WebKit framework as a JavaScript challenge provider for YouTube extraction. Python; `yt-dlp` plugin architecture; Apple WebKit.
-- **[bgutil-ytdlp-pot-provider](https://github.com/grqz/bgutil-ytdlp-pot-provider)** — generates the tokens required by YouTube's anti-abuse/request-validation mechanisms. Python/JS; protocol research and browser-behavior emulation.
-- **[ssl_imp](https://github.com/grqz/ssl_imp)** — a C/OpenSSL project reproducing Chrome's TLS fingerprint. Good reading on TLS handshakes and client fingerprinting at the network layer.
+- **Vendored** — [yt-dlp-apple-webkit-jsi](https://github.com/grqz/yt-dlp-apple-webkit-jsi) → `.claude/vendor/yt-dlp-apple-webkit-jsi/` (Apache-2.0). A `yt-dlp` plugin using Apple's WebKit framework as a JavaScript challenge provider for YouTube extraction. Python; `yt-dlp` plugin architecture.
+- **Reference only** — [bgutil-ytdlp-pot-provider](https://github.com/grqz/bgutil-ytdlp-pot-provider) (no LICENSE file found upstream). Generates tokens for YouTube's anti-abuse/request-validation mechanisms. Python/JS.
+- **Reference only** — [ssl_imp](https://github.com/grqz/ssl_imp) (no LICENSE file found upstream). A C/OpenSSL project reproducing Chrome's TLS fingerprint.
 
 ### [WitherOrNot](https://github.com/WitherOrNot) — Windows internals & reverse engineering
 
@@ -314,32 +316,31 @@ Focused on Windows Component-Based Servicing (CBS), licensing mechanisms,
 and low-level system behavior — an area with limited official
 documentation.
 
-- **[TSforge](https://github.com/massgravel/TSforge)** — activation/evaluation extension methods spanning Windows Vista through 11. C#; Windows licensing research.
-- **[UMSKT](https://github.com/UMSKT/UMSKT)** — open-source toolkit researching Microsoft pre-Vista licensing mechanisms. C++.
-- **[cbs-docs](https://github.com/WitherOrNot/cbs-docs)** — reverse-engineered documentation of Windows Component-Based Servicing architecture and image-deployment behavior.
-- **[cbsexploder](https://github.com/WitherOrNot/cbsexploder)** — a CBS client for offline Windows servicing: stage, install, uninstall, and enumerate packages in an offline image. C#.
+- **Vendored** — [cbsexploder](https://github.com/WitherOrNot/cbsexploder) → `.claude/vendor/cbsexploder/` (GPLv3). A CBS client for offline Windows servicing: stage, install, uninstall, and enumerate packages in an offline image. C#.
+- **Reference only** — [cbs-docs](https://github.com/WitherOrNot/cbs-docs) (no LICENSE file found upstream). Reverse-engineered documentation of CBS architecture and image-deployment behavior.
+- **Excluded** — [TSforge](https://github.com/massgravel/TSforge) and [UMSKT](https://github.com/UMSKT/UMSKT). Both are, functionally, Windows/Office activation-bypass and product-key-generation tools (TSforge: activation exploits spanning Vista–11; UMSKT: a "Universal MDL Serial Keygen Tool" for pre-Vista Microsoft products). Regardless of their GPLv3/AGPLv3 licenses, vendoring license-circumvention tooling into this repo isn't something this assistant will do — linked here for reference only, not copied.
 
 ### [yuliskov](https://github.com/yuliskov) — Android TV & media software
 
-- **[SmartTube](https://github.com/yuliskov/SmartTube)** — a free, open-source Android TV/TV-box media client: SponsorBlock integration, adjustable playback speed, 8K/60fps/HDR, live chat, customizable controls, no Google Services dependency. The largest project in this list — a full user-facing app with playback, TV UX, networking, and an active community. Java/Kotlin; Retrofit/RxJava.
-- **[LeanKeyboard](https://github.com/yuliskov/LeanKeyboard)** — a keyboard built for Android TV/set-top-box remote input; multi-language, no Google Services or root required. Java.
-- **[SmartTubeLegacy](https://github.com/yuliskov/SmartTubeLegacy)** — the archived predecessor to SmartTube. JavaScript.
+- **Vendored** — [SmartTube](https://github.com/yuliskov/SmartTube) → `.claude/vendor/SmartTube/` (MIT). A free, open-source Android TV/TV-box media client: SponsorBlock integration, adjustable playback speed, 8K/60fps/HDR, no Google Services dependency. The largest vendored entry here (~65 MB) — a full user-facing app with playback, TV UX, and networking.
+- **Vendored** — [LeanKeyboard](https://github.com/yuliskov/LeanKeyboard) → `.claude/vendor/LeanKeyboard/` (MIT). A keyboard built for Android TV/set-top-box remote input; no Google Services or root required. Java.
+- **Reference only, not cloned** — [SmartTubeLegacy](https://github.com/yuliskov/SmartTubeLegacy), the archived predecessor to SmartTube. Skipped as redundant (SmartTube is the maintained fork) rather than for a license reason.
 
 ### [stevietv](https://github.com/stevietv) — C#/.NET open-source contributions
 
 Maintains a broad profile (100+ repos, C#/JS/SQL/React/TypeScript). The
 most notable associated project:
 
-- **[Sonarr](https://github.com/Sonarr/Sonarr)** — a mature, production-scale PVR-style application for automatically managing and downloading TV series. C#/.NET; scheduling, metadata, media management, web UI. Per the source write-up, check which parts of stevietv's own profile are original work vs. contributions to projects like this one, rather than assuming full authorship.
+- **Vendored** — [Sonarr](https://github.com/Sonarr/Sonarr) → `.claude/vendor/Sonarr/` (GPLv3). A mature, production-scale PVR-style application for automatically managing and downloading TV series. C#/.NET. Per the source write-up, check which parts of stevietv's own profile are original work vs. contributions to projects like this one, rather than assuming full authorship.
 
 ### If you want to look closer
 
-| Project | What it's good for studying |
-| --- | --- |
-| `yt-dlp-apple-webkit-jsi` | Plugin architecture + platform browser internals |
-| `ssl_imp` | Networking + TLS fingerprinting |
-| `cbs-docs` | Windows internals via reverse engineering |
-| `cbsexploder` | Turning RE findings into a systems tool |
-| `SmartTube` | Large-scale Android TV app engineering |
-| `LeanKeyboard` | TV UX + constrained-input design |
-| `Sonarr` | Production .NET/C# service architecture |
+| Project | Status | What it's good for studying |
+| --- | --- | --- |
+| `yt-dlp-apple-webkit-jsi` | vendored | Plugin architecture + platform browser internals |
+| `ssl_imp` | reference only | Networking + TLS fingerprinting |
+| `cbs-docs` | reference only | Windows internals via reverse engineering |
+| `cbsexploder` | vendored | Turning RE findings into a systems tool |
+| `SmartTube` | vendored | Large-scale Android TV app engineering |
+| `LeanKeyboard` | vendored | TV UX + constrained-input design |
+| `Sonarr` | vendored | Production .NET/C# service architecture |
