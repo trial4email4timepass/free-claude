@@ -1,0 +1,1114 @@
+From 7444a9bf8c439f3dcffe429a431c39c591c919a6 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 16 Sep 2026 17:32:36 +0000
+Subject: [PATCH] Add cross-provider LLM fallback (e.g. Claude -> OpenAI on
+ rate limit)
+
+Adds an opt-in models[].fallback_models config so a run can keep going
+through a rate limit, a billing issue, or bad credentials on one
+provider by retrying the same request against another configured
+model, in order, before giving up.
+
+- ModelConfig.fallback_models: list[str] | None (config/model_config.py),
+  excluded from the kwargs create_chat_model forwards to the provider
+  client (models/factory.py), like pricing/context_window already are.
+- LLMErrorHandlingMiddleware resolves the chain once at construction
+  from the agent's configured model name (dropping unresolvable,
+  duplicate, or self-referential entries with a warning) and, on
+  primary-model exhaustion for a fallback-eligible reason (retry budget
+  exhausted, or a quota/auth rejection), retries the same ModelRequest
+  against each fallback in turn via request.override(model=...) before
+  building the final user-facing failure message. Unclassified
+  ("generic") errors are not eligible, so a real bug isn't masked by a
+  provider swap. Behavior is unchanged when no model_name/fallback
+  chain is configured.
+- Threads model_name from build_middlewares (lead agent) and the
+  subagent executor's already-resolved model name through
+  build_lead_runtime_middlewares / build_subagent_runtime_middlewares /
+  _build_runtime_middlewares so LLMErrorHandlingMiddleware knows which
+  model's fallback_models to use.
+- config.example.yaml + backend/docs/CONFIGURATION.md document the new
+  field with a worked Claude Sonnet -> GPT-4 example; config_version
+  bumped 45 -> 46.
+- Tests: model_config field round-trip, factory exclusion regression,
+  and dedicated sync/async fallback-chain coverage (dedupe/self-ref/
+  unresolvable entries, success after primary exhaustion, quota-error
+  fallback, chain-exhausted message, generic errors skip fallback,
+  fallback-model construction failure is skipped not fatal). Existing
+  suites updated only where they stub build_lead_runtime_middlewares /
+  build_subagent_runtime_middlewares / LLMErrorHandlingMiddleware with
+  a fixed keyword signature.
+---
+ backend/docs/CONFIGURATION.md                 |  41 +++
+ .../deerflow/agents/lead_agent/agent.py       |   1 +
+ .../llm_error_handling_middleware.py          | 279 ++++++++++++++----
+ .../tool_error_handling_middleware.py         |  24 +-
+ .../harness/deerflow/config/model_config.py   |  13 +
+ .../harness/deerflow/models/factory.py        |   3 +
+ .../tests/test_durable_context_middleware.py  |   2 +-
+ .../tests/test_lead_agent_model_resolution.py |  30 +-
+ .../test_llm_error_handling_middleware.py     | 225 ++++++++++++++
+ backend/tests/test_model_config.py            |  10 +
+ backend/tests/test_model_factory.py           |  15 +
+ .../test_tool_error_handling_middleware.py    |   6 +-
+ config.example.yaml                           |  17 +-
+ 13 files changed, 586 insertions(+), 80 deletions(-)
+
+diff --git a/backend/docs/CONFIGURATION.md b/backend/docs/CONFIGURATION.md
+index 2ecde29..1b11573 100644
+--- a/backend/docs/CONFIGURATION.md
++++ b/backend/docs/CONFIGURATION.md
+@@ -47,6 +47,47 @@ concurrency settings deliberately. Waiting contributes to model-call latency
+ and remains subject to the enclosing run's timeout. This option is off by
+ default and does not promise unlimited retries or eventual task completion.
+ 
++## Model fallback
++
++To keep a run going through a rate limit, a billing issue, or bad credentials
++on one provider, point a model at one or more others to fall back to. Add
++`fallback_models` alongside a model's `name`, `use`, and `model` fields:
++
++```yaml
++models:
++  - name: claude-sonnet-4
++    use: langchain_anthropic:ChatAnthropic
++    model: claude-sonnet-4-20250514
++    api_key: $ANTHROPIC_API_KEY
++    fallback_models: [gpt-4]   # tried in order if claude-sonnet-4 keeps failing
++
++  - name: gpt-4
++    use: langchain_openai:ChatOpenAI
++    model: gpt-4
++    api_key: $OPENAI_API_KEY
++```
++
++Each name in `fallback_models` must be another entry in this `models:` list,
++with its own working credentials — DeerFlow does not share or translate
++credentials between providers. Fallback triggers when a request to the
++primary model either exhausts its own retry/backoff budget (a sustained rate
++limit, a busy provider, or a burst-rate throttle) or is rejected outright for
++a quota/billing or authentication reason — exactly the cases a different
++provider account can plausibly route around. It does **not** trigger for an
++unclassified error, since swapping providers wouldn't fix a real bug and
++could mask it. Each fallback gets the same retry/backoff policy as the
++primary before DeerFlow moves to the next one in the list; only once every
++fallback has also failed does the run see the final failure message.
++
++A name that doesn't resolve to a configured model, repeats an earlier entry,
++or points back at the model itself is dropped with a warning at agent-build
++time rather than failing startup. Off unless configured, so existing
++deployments are unaffected. This is a same-request fallback for
++availability, not a cost-based router: it does not consider per-model
++`pricing`, and a fallback model does not inherit the primary's sampling
++settings (`temperature`, `max_tokens`, thinking configuration, etc.) — each
++model's own configured settings apply as-is when it is used.
++
+ ## Config Versioning
+ 
+ `config.example.yaml` contains a `config_version` field that tracks schema changes. When the example version is higher than your local `config.yaml`, the application emits a startup warning:
+diff --git a/backend/packages/harness/deerflow/agents/lead_agent/agent.py b/backend/packages/harness/deerflow/agents/lead_agent/agent.py
+index 41c8708..bb882a0 100644
+--- a/backend/packages/harness/deerflow/agents/lead_agent/agent.py
++++ b/backend/packages/harness/deerflow/agents/lead_agent/agent.py
+@@ -539,6 +539,7 @@ def build_middlewares(
+     runtime_middleware_kwargs = {
+         "app_config": resolved_app_config,
+         "lazy_init": True,
++        "model_name": model_name,
+     }
+     if available_skills is not None:
+         runtime_middleware_kwargs["available_skills"] = available_skills
+diff --git a/backend/packages/harness/deerflow/agents/middlewares/llm_error_handling_middleware.py b/backend/packages/harness/deerflow/agents/middlewares/llm_error_handling_middleware.py
+index 7df3884..ea0abd9 100644
+--- a/backend/packages/harness/deerflow/agents/middlewares/llm_error_handling_middleware.py
++++ b/backend/packages/harness/deerflow/agents/middlewares/llm_error_handling_middleware.py
+@@ -8,7 +8,7 @@ import random
+ import threading
+ import time
+ from collections import deque
+-from collections.abc import Awaitable, Callable
++from collections.abc import Awaitable, Callable, Iterator
+ from email.utils import parsedate_to_datetime
+ from typing import Any, override
+ 
+@@ -19,6 +19,7 @@ from langchain.agents.middleware.types import (
+     ModelRequest,
+     ModelResponse,
+ )
++from langchain_core.language_models import BaseChatModel
+ from langchain_core.messages import AIMessage
+ from langgraph.errors import GraphBubbleUp
+ 
+@@ -125,6 +126,37 @@ _STREAM_DROP_EXCEPTIONS: frozenset[str] = frozenset(
+     }
+ )
+ 
++# ``_classify_error`` reasons that trip the circuit breaker on final exhaustion
++# (see the "record failure vs. release probe" branch in ``wrap_model_call`` /
++# ``awrap_model_call``). Quota/auth are configuration problems, not "provider
++# down", and burst_rate is a slope-throttle rather than an outage (issue
++# #4290) - none of those should fast-fail every other call for the recovery
++# window, so only a genuinely exhausted transient/busy failure counts.
++_CIRCUIT_TRIPPING_REASONS: frozenset[str] = frozenset({"transient", "busy"})
++
++# Reasons worth retrying against a configured fallback model (see
++# ``ModelConfig.fallback_models``): the primary's retry budget ran out
++# (transient/busy/burst_rate) or the account/credentials are the problem
++# (quota/auth) - both are exactly the cases a *different* provider can plausibly
++# route around. ``admission`` (our own local pacing, not a provider signal) and
++# ``generic`` (an unclassified error, possibly a real bug) are excluded:
++# swapping providers wouldn't address either and could mask the real cause.
++_FALLBACK_ELIGIBLE_REASONS: frozenset[str] = frozenset({"transient", "busy", "burst_rate", "quota", "auth"})
++
++
++class _RetryExhausted(Exception):
++    """Internal signal: one model's retry budget under this middleware ran out.
++
++    Raised by ``_run_attempts_sync``/``_run_attempts_async`` instead of directly
++    building the user-facing fallback message, so the caller can decide whether
++    to try the next model in the fallback chain before giving up.
++    """
++
++    def __init__(self, exc: BaseException, reason: str) -> None:
++        super().__init__(str(exc))
++        self.exc = exc
++        self.reason = reason
++
+ 
+ # Process-global LLM call concurrency cap. ONE limiter is shared across every
+ # ``LLMErrorHandlingMiddleware`` instance and every call path: the lead agent
+@@ -382,7 +414,7 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+     # burst-rate (limit_burst_rate) spikes. See _get_process_limiter.
+     max_concurrent_llm_calls: int = 0
+ 
+-    def __init__(self, *, app_config: AppConfig, **kwargs: Any) -> None:
++    def __init__(self, *, app_config: AppConfig, model_name: str | None = None, **kwargs: Any) -> None:
+         super().__init__(**kwargs)
+ 
+         self.circuit_failure_threshold = app_config.circuit_breaker.failure_threshold
+@@ -413,6 +445,89 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+         self._circuit_probe_in_flight = False
+         self._circuit_probe_token: object | None = None
+ 
++        # Cross-provider fallback (see ``ModelConfig.fallback_models``). Resolved
++        # once at construction from the model this middleware instance is bound
++        # to (``model_name`` is the agent's *configured* model name, not a live
++        # model instance) so a missing/self-referential/duplicate entry is
++        # caught here instead of on every failed call. Empty when ``model_name``
++        # is unset (callers that predate this feature, and tests) or the model
++        # has no ``fallback_models`` configured - the default, so behavior for
++        # existing deployments is unchanged.
++        self._app_config = app_config
++        self._model_name = model_name
++        self._fallback_chain = self._resolve_fallback_chain(app_config, model_name)
++        self._fallback_model_cache: dict[str, BaseChatModel] = {}
++
++    def _resolve_fallback_chain(self, app_config: AppConfig, model_name: str | None) -> list[str]:
++        """Ordered, de-duplicated list of fallback model names for ``model_name``.
++
++        Drops a name that doesn't resolve to a configured model, that repeats
++        an earlier entry, or that points back to ``model_name`` itself (which
++        would otherwise let a misconfigured chain loop forever) - each with a
++        warning, since a broken fallback entry should degrade rather than break
++        agent startup.
++        """
++        if not model_name:
++            return []
++        model_config = app_config.get_model_config(model_name)
++        if model_config is None or not model_config.fallback_models:
++            return []
++        seen = {model_name}
++        chain: list[str] = []
++        for candidate in model_config.fallback_models:
++            if candidate in seen:
++                logger.warning(
++                    "Model '%s' fallback_models: skipping duplicate or self-referential entry '%s'.",
++                    model_name,
++                    candidate,
++                )
++                continue
++            seen.add(candidate)
++            if app_config.get_model_config(candidate) is None:
++                logger.warning(
++                    "Model '%s' fallback_models: '%s' is not a configured model; skipping.",
++                    model_name,
++                    candidate,
++                )
++                continue
++            chain.append(candidate)
++        return chain
++
++    def _get_or_build_fallback_model(self, name: str) -> BaseChatModel:
++        """Build (and cache) the fallback chat model instance for ``name``.
++
++        Cached per middleware instance - a fresh middleware is built per agent
++        graph assembly (see ``build_lead_runtime_middlewares`` /
++        ``build_subagent_runtime_middlewares``), so this never outlives one run.
++        ``attach_tracing=False`` matches every other in-graph
++        ``create_chat_model`` call: tracing is attached once at the graph root
++        (see the module docstring on ``lead_agent/agent.py``).
++        """
++        model_instance = self._fallback_model_cache.get(name)
++        if model_instance is None:
++            from deerflow.models.factory import create_chat_model
++
++            model_instance = create_chat_model(name, app_config=self._app_config, attach_tracing=False)
++            self._fallback_model_cache[name] = model_instance
++        return model_instance
++
++    def _iter_call_candidates(self, request: ModelRequest) -> Iterator[tuple[str | None, ModelRequest]]:
++        """Yield ``(label, request)`` for the primary model, then each fallback in order.
++
++        The primary is always ``request`` unchanged. A fallback candidate whose
++        model instance fails to build (bad class path, missing credentials key,
++        etc.) is logged and skipped rather than aborting the whole chain - the
++        remaining fallbacks (and the user-facing failure message) still apply.
++        """
++        yield self._model_name, request
++        for name in self._fallback_chain:
++            try:
++                fallback_model = self._get_or_build_fallback_model(name)
++            except Exception:
++                logger.exception("Failed to build fallback model '%s'; skipping.", name)
++                continue
++            yield name, request.override(model=fallback_model)
++
+     def _max_attempts_for(self, exc: BaseException, reason: str = "transient") -> int:
+         """Return the effective max attempt count for this exception.
+ 
+@@ -785,6 +900,44 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+         except Exception:
+             logger.debug("Failed to emit async llm_retry event", exc_info=True)
+ 
++    def _run_attempts_sync(
++        self,
++        request: ModelRequest,
++        handler: Callable[[ModelRequest], ModelResponse],
++    ) -> ModelResponse:
++        """Retry/backoff loop for one candidate model. Raises ``_RetryExhausted`` on final failure."""
++        attempt = 1
++        prev_delay_ms: int | None = None
++        while True:
++            try:
++                return self._bounded_model_call_sync(request, handler)
++            except GraphBubbleUp:
++                raise
++            except Exception as exc:
++                retriable, reason = self._classify_error(exc)
++                max_attempts = self._max_attempts_for(exc, reason)
++                if retriable and attempt < max_attempts:
++                    wait_ms = self._build_retry_delay_ms(prev_delay_ms, exc, reason)
++                    prev_delay_ms = wait_ms
++                    logger.warning(
++                        "Transient LLM error on attempt %d/%d; retrying in %dms: %s",
++                        attempt,
++                        max_attempts,
++                        wait_ms,
++                        _extract_error_detail(exc),
++                    )
++                    self._emit_retry_event(attempt, wait_ms, reason, max_attempts=max_attempts)
++                    time.sleep(wait_ms / 1000)
++                    attempt += 1
++                    continue
++                logger.warning(
++                    "LLM call failed after %d attempt(s): %s",
++                    attempt,
++                    _extract_error_detail(exc),
++                    exc_info=exc,
++                )
++                raise _RetryExhausted(exc, reason) from exc
++
+     @override
+     def wrap_model_call(
+         self,
+@@ -799,16 +952,50 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+                 detail="LLM circuit breaker is open",
+             )
+ 
++        last_exc: BaseException | None = None
++        last_reason = "generic"
++        for label, candidate_request in self._iter_call_candidates(request):
++            try:
++                response = self._run_attempts_sync(candidate_request, handler)
++            except GraphBubbleUp:
++                # Preserve LangGraph control-flow signals (interrupt/pause/resume).
++                self._release_half_open_probe()
++                raise
++            except _RetryExhausted as exhausted:
++                last_exc, last_reason = exhausted.exc, exhausted.reason
++                if label != self._model_name:
++                    logger.warning("Fallback model '%s' also failed (%s); trying next.", label, last_reason)
++                if last_reason in _FALLBACK_ELIGIBLE_REASONS:
++                    continue
++                break  # not a reason fallback can plausibly fix; stop trying the chain
++            else:
++                self._record_success()
++                return response
++
++        assert last_exc is not None  # candidates always yields at least the primary
++        if last_reason in _CIRCUIT_TRIPPING_REASONS:
++            self._record_failure()
++        else:
++            # Non-retriable, OR burst_rate (a transient provider slope-throttle,
++            # not "provider down"): release the half-open probe without
++            # recording a failure so the circuit doesn't trip and fast-fail ALL
++            # calls for the recovery window - the exact self-inflicted outage
++            # #4290 is trying to prevent.
++            self._release_half_open_probe()
++        return self._build_user_fallback_message(last_exc, last_reason)
++
++    async def _run_attempts_async(
++        self,
++        request: ModelRequest,
++        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
++    ) -> ModelResponse:
++        """Async retry/backoff loop for one candidate model. Raises ``_RetryExhausted`` on final failure."""
+         attempt = 1
+         prev_delay_ms: int | None = None
+         while True:
+             try:
+-                response = self._bounded_model_call_sync(request, handler)
+-                self._record_success()
+-                return response
++                return await self._bounded_model_call(request, handler)
+             except GraphBubbleUp:
+-                # Preserve LangGraph control-flow signals (interrupt/pause/resume).
+-                self._release_half_open_probe()
+                 raise
+             except Exception as exc:
+                 retriable, reason = self._classify_error(exc)
+@@ -823,8 +1010,8 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+                         wait_ms,
+                         _extract_error_detail(exc),
+                     )
+-                    self._emit_retry_event(attempt, wait_ms, reason, max_attempts=max_attempts)
+-                    time.sleep(wait_ms / 1000)
++                    await self._aemit_retry_event(attempt, wait_ms, reason, max_attempts=max_attempts)
++                    await asyncio.sleep(wait_ms / 1000)
+                     attempt += 1
+                     continue
+                 logger.warning(
+@@ -833,16 +1020,7 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+                     _extract_error_detail(exc),
+                     exc_info=exc,
+                 )
+-                if retriable and reason != "burst_rate":
+-                    self._record_failure()
+-                else:
+-                    # Non-retriable, OR burst_rate (a transient provider
+-                    # slope-throttle, not "provider down"): release the half-open
+-                    # probe without recording a failure so the circuit doesn't
+-                    # trip and fast-fail ALL calls for the recovery window - the
+-                    # exact self-inflicted outage #4290 is trying to prevent.
+-                    self._release_half_open_probe()
+-                return self._build_user_fallback_message(exc, reason)
++                raise _RetryExhausted(exc, reason) from exc
+ 
+     @override
+     async def awrap_model_call(
+@@ -859,57 +1037,44 @@ class LLMErrorHandlingMiddleware(AgentMiddleware[AgentState]):
+                 detail="LLM circuit breaker is open",
+             )
+ 
+-        attempt = 1
+-        prev_delay_ms: int | None = None
++        last_exc: BaseException | None = None
++        last_reason = "generic"
+         try:
+-            while True:
++            for label, candidate_request in self._iter_call_candidates(request):
+                 try:
+-                    response = await self._bounded_model_call(request, handler)
+-                    self._record_success()
+-                    return response
++                    response = await self._run_attempts_async(candidate_request, handler)
+                 except GraphBubbleUp:
+                     # Preserve LangGraph control-flow signals (interrupt/pause/resume).
+                     self._release_half_open_probe()
+                     raise
+-                except Exception as exc:
+-                    retriable, reason = self._classify_error(exc)
+-                    max_attempts = self._max_attempts_for(exc, reason)
+-                    if retriable and attempt < max_attempts:
+-                        wait_ms = self._build_retry_delay_ms(prev_delay_ms, exc, reason)
+-                        prev_delay_ms = wait_ms
+-                        logger.warning(
+-                            "Transient LLM error on attempt %d/%d; retrying in %dms: %s",
+-                            attempt,
+-                            max_attempts,
+-                            wait_ms,
+-                            _extract_error_detail(exc),
+-                        )
+-                        await self._aemit_retry_event(attempt, wait_ms, reason, max_attempts=max_attempts)
+-                        await asyncio.sleep(wait_ms / 1000)
+-                        attempt += 1
++                except _RetryExhausted as exhausted:
++                    last_exc, last_reason = exhausted.exc, exhausted.reason
++                    if label != self._model_name:
++                        logger.warning("Fallback model '%s' also failed (%s); trying next.", label, last_reason)
++                    if last_reason in _FALLBACK_ELIGIBLE_REASONS:
+                         continue
+-                    logger.warning(
+-                        "LLM call failed after %d attempt(s): %s",
+-                        attempt,
+-                        _extract_error_detail(exc),
+-                        exc_info=exc,
+-                    )
+-                    if retriable and reason != "burst_rate":
+-                        self._record_failure()
+-                    else:
+-                        # Non-retriable, OR burst_rate (a transient provider
+-                        # slope-throttle, not "provider down"): release the half-open
+-                        # probe without recording a failure so the circuit doesn't
+-                        # trip and fast-fail ALL calls for the recovery window - the
+-                        # exact self-inflicted outage #4290 is trying to prevent.
+-                        self._release_half_open_probe()
+-                    return self._build_user_fallback_message(exc, reason)
++                    break  # not a reason fallback can plausibly fix; stop trying the chain
++                else:
++                    self._record_success()
++                    return response
+         except asyncio.CancelledError:
+             # Cancellation can arrive during admission, the provider call, retry
+             # event delivery, or backoff. It is not a provider failure.
+             self._release_half_open_probe(probe_token=probe_token)
+             raise
+ 
++        assert last_exc is not None  # candidates always yields at least the primary
++        if last_reason in _CIRCUIT_TRIPPING_REASONS:
++            self._record_failure()
++        else:
++            # Non-retriable, OR burst_rate (a transient provider slope-throttle,
++            # not "provider down"): release the half-open probe without
++            # recording a failure so the circuit doesn't trip and fast-fail ALL
++            # calls for the recovery window - the exact self-inflicted outage
++            # #4290 is trying to prevent.
++            self._release_half_open_probe()
++        return self._build_user_fallback_message(last_exc, last_reason)
++
+ 
+ def _matches_any(detail: str, patterns: tuple[str, ...]) -> bool:
+     return any(pattern in detail for pattern in patterns)
+diff --git a/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py b/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py
+index 79b8fae..b95f76d 100644
+--- a/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py
++++ b/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py
+@@ -169,8 +169,16 @@ def _build_runtime_middlewares(
+     authorization_infrastructure_tool_names: frozenset[str] = frozenset(),
+     available_skills: set[str] | None = None,
+     owns_agent_skill_projection: bool = True,
++    model_name: str | None = None,
+ ) -> list[AgentMiddleware]:
+-    """Build shared base middlewares for agent execution."""
++    """Build shared base middlewares for agent execution.
++
++    ``model_name`` is the resolved *configured* model name (not a live model
++    instance) this agent is calling; it is forwarded to
++    ``LLMErrorHandlingMiddleware`` so it can resolve that model's
++    ``fallback_models`` chain. ``None`` (the default) disables fallback, same
++    as before this parameter existed.
++    """
+     from deerflow.agents.middlewares.input_sanitization_middleware import InputSanitizationMiddleware
+     from deerflow.agents.middlewares.llm_error_handling_middleware import LLMErrorHandlingMiddleware
+     from deerflow.agents.middlewares.thread_data_middleware import ThreadDataMiddleware
+@@ -215,7 +223,7 @@ def _build_runtime_middlewares(
+         from deerflow.agents.middlewares.dangling_tool_call_middleware import DanglingToolCallMiddleware
+ 
+         tail.append(DanglingToolCallMiddleware())
+-    tail.append(LLMErrorHandlingMiddleware(app_config=app_config))
++    tail.append(LLMErrorHandlingMiddleware(app_config=app_config, model_name=model_name))
+ 
+     # ToolReceiptMiddleware is the outermost wrap_tool_call layer: Guardrail,
+     # SandboxAudit, ReadBeforeWrite, and ToolProgress can all short-circuit a
+@@ -325,6 +333,7 @@ def build_lead_runtime_middlewares(
+     deferred_setup: "DeferredToolSetup | None" = None,
+     available_skills: set[str] | None = None,
+     owns_agent_skill_projection: bool = True,
++    model_name: str | None = None,
+ ) -> list[AgentMiddleware]:
+     """Middlewares shared by lead agent runtime before lead-only middlewares."""
+     return _build_runtime_middlewares(
+@@ -339,6 +348,7 @@ def build_lead_runtime_middlewares(
+         available_skills=available_skills,
+         owns_agent_skill_projection=owns_agent_skill_projection,
+         authorization_infrastructure_tool_names=(frozenset({deferred_setup.tool_search_tool.name}) if authorization_provider is not None and deferred_setup is not None and deferred_setup.tool_search_tool is not None else frozenset()),
++        model_name=model_name,
+     )
+ 
+ 
+@@ -365,6 +375,12 @@ def build_subagent_runtime_middlewares(
+ 
+     resolved_extensions = extensions if extensions is not None else get_agent_build_extensions()
+ 
++    # Resolved here (rather than at its original later use below) so it can
++    # also reach LLMErrorHandlingMiddleware via _build_runtime_middlewares,
++    # which needs the model name up front to look up its fallback_models chain.
++    if model_name is None and app_config.models:
++        model_name = app_config.models[0].name
++
+     middlewares = _build_runtime_middlewares(
+         app_config=app_config,
+         include_uploads=False,
+@@ -376,6 +392,7 @@ def build_subagent_runtime_middlewares(
+         authorization_provider=authorization_provider,
+         authorization_infrastructure_tool_names=(frozenset({deferred_setup.tool_search_tool.name}) if authorization_provider is not None and deferred_setup is not None and deferred_setup.tool_search_tool is not None else frozenset()),
+         owns_agent_skill_projection=False,
++        model_name=model_name,
+     )
+ 
+     # Enabled/configured skills are discoverable metadata, not automatically
+@@ -407,9 +424,6 @@ def build_subagent_runtime_middlewares(
+         )
+     )
+ 
+-    if model_name is None and app_config.models:
+-        model_name = app_config.models[0].name
+-
+     model_config = app_config.get_model_config(model_name) if model_name else None
+     if model_config is not None and model_config.supports_vision:
+         from deerflow.agents.middlewares.view_image_middleware import ViewImageMiddleware
+diff --git a/backend/packages/harness/deerflow/config/model_config.py b/backend/packages/harness/deerflow/config/model_config.py
+index 590e809..8a934d6 100644
+--- a/backend/packages/harness/deerflow/config/model_config.py
++++ b/backend/packages/harness/deerflow/config/model_config.py
+@@ -72,3 +72,16 @@ class ModelConfig(BaseModel):
+             "This is a shortcut for `when_thinking_enabled` and will be merged with `when_thinking_enabled` if both are provided."
+         ),
+     )
++    fallback_models: list[str] | None = Field(
++        default=None,
++        description=(
++            "Ordered list of other model names (from this `models:` section) to try, in turn, if a "
++            "request to this model exhausts its own retry budget or is rejected for quota/billing or "
++            "authentication reasons. Each fallback is attempted with the same retry/backoff policy as "
++            "the primary before moving to the next. Typical use: point a Claude model at an OpenAI (or "
++            "other provider) model so a run keeps going through a rate limit or an account issue instead "
++            "of failing outright. Leave unset (default) for no fallback — the request fails after its own "
++            "retries as before. A name that does not resolve to a configured model, or that would form a "
++            "cycle back to this model, is skipped with a warning rather than raising."
++        ),
++    )
+diff --git a/backend/packages/harness/deerflow/models/factory.py b/backend/packages/harness/deerflow/models/factory.py
+index 1bc837a..f91973d 100644
+--- a/backend/packages/harness/deerflow/models/factory.py
++++ b/backend/packages/harness/deerflow/models/factory.py
+@@ -227,6 +227,9 @@ def create_chat_model(name: str | None = None, thinking_enabled: bool = False, *
+             # forward unknown kwargs into the completion request payload.
+             "pricing",
+             "request_admission",
++            # Orchestration-only metadata consumed by LLMErrorHandlingMiddleware
++            # (see ModelConfig.fallback_models) — never a provider constructor kwarg.
++            "fallback_models",
+         },
+     )
+     # Layer per-caller sampling overrides (e.g. a custom agent's temperature /
+diff --git a/backend/tests/test_durable_context_middleware.py b/backend/tests/test_durable_context_middleware.py
+index a7aba8e..832406f 100644
+--- a/backend/tests/test_durable_context_middleware.py
++++ b/backend/tests/test_durable_context_middleware.py
+@@ -502,7 +502,7 @@ class TestMiddlewareRegistration:
+         app_config = _make_app_config()
+         summary_sentinel = object()
+ 
+-        monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++        monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+         monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: summary_sentinel)
+         monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+diff --git a/backend/tests/test_lead_agent_model_resolution.py b/backend/tests/test_lead_agent_model_resolution.py
+index e60b269..3451a6e 100644
+--- a/backend/tests/test_lead_agent_model_resolution.py
++++ b/backend/tests/test_lead_agent_model_resolution.py
+@@ -823,10 +823,11 @@ def test_build_middlewares_passes_explicit_app_config_to_shared_factory(monkeypa
+ 
+     provider = object()
+ 
+-    def _fake_build_lead_runtime_middlewares(*, app_config, lazy_init, authorization_provider):
++    def _fake_build_lead_runtime_middlewares(*, app_config, lazy_init, authorization_provider, model_name=None):
+         captured["app_config"] = app_config
+         captured["lazy_init"] = lazy_init
+         captured["authorization_provider"] = authorization_provider
++        captured["model_name"] = model_name
+         return ["base-middleware"]
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", _raise_get_app_config)
+@@ -859,6 +860,7 @@ def test_build_middlewares_passes_explicit_app_config_to_shared_factory(monkeypa
+         "app_config": app_config,
+         "lazy_init": True,
+         "authorization_provider": provider,
++        "model_name": "safe-model",
+         "title_app_config": app_config,
+         "memory_config": app_config.memory,
+     }
+@@ -878,7 +880,7 @@ def test_build_middlewares_passes_run_model_name_to_summarization(monkeypatch):
+     )
+     captured: dict[str, object] = {}
+ 
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init: ["base-middleware"])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init, model_name=None: ["base-middleware"])
+     monkeypatch.setattr(
+         lead_agent_module,
+         "_create_summarization_middleware",
+@@ -903,7 +905,7 @@ def test_build_middlewares_orders_skill_activation_before_policy_and_durable_con
+     from deerflow.agents.middlewares.skill_tool_policy_middleware import SkillToolPolicyMiddleware
+ 
+     app_config = _make_app_config([_make_model("safe-model", supports_thinking=False)])
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -931,7 +933,7 @@ def test_compiled_skill_policy_chain_filters_schema_and_blocks_execution(monkeyp
+         [_make_model("safe-model", supports_thinking=False)],
+         loop_detection=LoopDetectionConfig(enabled=False),
+     )
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1004,7 +1006,7 @@ def test_build_middlewares_places_mcp_routing_before_deferred_filter(monkeypatch
+     setup = DeferredToolSetup(object(), frozenset({"mcp_thing"}), "hash123")
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1038,7 +1040,7 @@ def test_build_middlewares_uses_loop_detection_config(monkeypatch):
+     )
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1064,7 +1066,7 @@ def test_build_middlewares_omits_loop_detection_when_disabled(monkeypatch):
+     )
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1091,7 +1093,7 @@ def test_build_middlewares_injects_configured_extension_middlewares(monkeypatch)
+     manual_middleware = MagicMock()
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1122,7 +1124,7 @@ def test_build_middlewares_passes_subagent_total_limit_from_app_config(monkeypat
+     app_config.subagents = SubagentsAppConfig(max_total_per_run=7)
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1145,7 +1147,7 @@ def test_build_middlewares_allows_runtime_subagent_total_limit_override(monkeypa
+     app_config.subagents = SubagentsAppConfig(max_total_per_run=7)
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1174,7 +1176,7 @@ def test_build_middlewares_rejects_invalid_configured_extension_middleware(monke
+     app_config.extensions = ExtensionsConfig(middlewares=[f"{__name__}:_make_model"])
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1194,7 +1196,7 @@ def test_build_middlewares_rejects_configured_extension_class_with_wrong_base(mo
+     app_config.extensions = ExtensionsConfig(middlewares=[f"{__name__}:ConfiguredNonMiddleware"])
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1214,7 +1216,7 @@ def test_build_middlewares_reraises_configured_extension_instantiation_failure(m
+     app_config.extensions = ExtensionsConfig(middlewares=[f"{__name__}:ConfiguredInitFailureMiddleware"])
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+@@ -1234,7 +1236,7 @@ def test_build_middlewares_rejects_missing_configured_extension_module(monkeypat
+     app_config.extensions = ExtensionsConfig(middlewares=["definitely_missing_pkg.middlewares_typo:GuardMiddleware"])
+ 
+     monkeypatch.setattr(lead_agent_module, "get_app_config", lambda: app_config)
+-    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True: [])
++    monkeypatch.setattr(lead_agent_module, "build_lead_runtime_middlewares", lambda *, app_config, lazy_init=True, model_name=None: [])
+     monkeypatch.setattr(lead_agent_module, "_create_summarization_middleware", lambda **_kwargs: None)
+     monkeypatch.setattr(lead_agent_module, "_create_todo_list_middleware", lambda is_plan_mode: None)
+ 
+diff --git a/backend/tests/test_llm_error_handling_middleware.py b/backend/tests/test_llm_error_handling_middleware.py
+index 2da3d75..fa88517 100644
+--- a/backend/tests/test_llm_error_handling_middleware.py
++++ b/backend/tests/test_llm_error_handling_middleware.py
+@@ -16,6 +16,7 @@ from deerflow.agents.middlewares.llm_error_handling_middleware import (
+     LLMErrorHandlingMiddleware,
+ )
+ from deerflow.config.app_config import AppConfig, LlmCallConfig
++from deerflow.config.model_config import ModelConfig
+ from deerflow.config.sandbox_config import SandboxConfig
+ 
+ 
+@@ -2203,3 +2204,227 @@ def test_concurrent_burst_failures_get_distinct_jittered_delays() -> None:
+         _random.setstate(saved_state)
+     assert all(5000 <= d <= 8000 for d in delays)
+     assert len(set(delays)) > 1  # de-synchronized, not a single 5000ms tick
++
++
++# ---------- Cross-provider fallback (ModelConfig.fallback_models) ----------
++
++
++class _FakeChatModel:
++    """Stand-in for a real provider's BaseChatModel, identified by `label`."""
++
++    def __init__(self, label: str) -> None:
++        self.label = label
++
++    def __repr__(self) -> str:
++        return f"_FakeChatModel({self.label!r})"
++
++
++class _FakeModelRequest:
++    """Minimal stand-in for langchain's ModelRequest: carries `.model` and supports `.override(model=...)`."""
++
++    def __init__(self, model: _FakeChatModel) -> None:
++        self.model = model
++
++    def override(self, **overrides: object) -> _FakeModelRequest:
++        return _FakeModelRequest(overrides.get("model", self.model))
++
++
++def _make_model_config(name: str, *, fallback_models: list[str] | None = None) -> ModelConfig:
++    return ModelConfig(name=name, use="langchain_openai:ChatOpenAI", model=name, fallback_models=fallback_models)
++
++
++def _build_middleware_with_fallback(
++    *,
++    primary: str = "primary",
++    fallback_models: list[str] | None = None,
++    other_models: list[str] = (),
++    **attrs: int,
++) -> LLMErrorHandlingMiddleware:
++    llm_call_fields = {_LLM_CALL_ATTR_MAP[key]: value for key, value in attrs.items() if key in _LLM_CALL_ATTR_MAP}
++    models = [_make_model_config(primary, fallback_models=fallback_models)]
++    models.extend(_make_model_config(name) for name in other_models)
++    app_config = AppConfig(
++        sandbox=SandboxConfig(use="test"),
++        llm_call=LlmCallConfig(**llm_call_fields),
++        models=models,
++    )
++    middleware = LLMErrorHandlingMiddleware(app_config=app_config, model_name=primary)
++    for key, value in attrs.items():
++        if key not in _LLM_CALL_ATTR_MAP:
++            setattr(middleware, key, value)
++    return middleware
++
++
++def test_fallback_chain_drops_unresolvable_self_referential_and_duplicate_entries(
++    caplog: pytest.LogCaptureFixture,
++) -> None:
++    """Only names that resolve to a *different* configured model survive."""
++    middleware = _build_middleware_with_fallback(
++        fallback_models=["primary", "backup", "backup", "ghost"],
++        other_models=["backup"],
++    )
++    assert middleware._fallback_chain == ["backup"]
++
++
++def test_no_fallback_configured_behaves_exactly_as_before(monkeypatch: pytest.MonkeyPatch) -> None:
++    """A model with no `fallback_models` never calls `.override` on the request."""
++    middleware = _build_middleware_with_fallback(fallback_models=None)
++    assert middleware._fallback_chain == []
++
++    request = SimpleNamespace()  # no .override attribute at all
++    result = middleware.wrap_model_call(request, transient_failing_handler)
++    assert result.additional_kwargs.get("error_reason") == "transient"
++
++
++def test_fallback_model_used_after_primary_exhausts_retries(monkeypatch: pytest.MonkeyPatch) -> None:
++    """Primary keeps failing (transient) -> its retry budget exhausts -> the
++    configured fallback model is tried next and succeeds."""
++    monkeypatch.setattr("time.sleep", lambda _d: None)
++    middleware = _build_middleware_with_fallback(
++        fallback_models=["backup"],
++        other_models=["backup"],
++        retry_max_attempts=2,
++    )
++
++    fake_backup_model = _FakeChatModel("backup")
++    built_names: list[str] = []
++
++    def fake_create_chat_model(name: str, *, app_config, attach_tracing):
++        built_names.append(name)
++        assert attach_tracing is False
++        return fake_backup_model
++
++    monkeypatch.setattr("deerflow.models.factory.create_chat_model", fake_create_chat_model)
++
++    request = _FakeModelRequest(_FakeChatModel("primary"))
++
++    def handler(req: _FakeModelRequest) -> AIMessage:
++        if req.model.label == "primary":
++            raise FakeError("Server Error", status_code=502)
++        return AIMessage(content=f"handled by {req.model.label}")
++
++    result = middleware.wrap_model_call(request, handler)
++    assert result.content == "handled by backup"
++    assert built_names == ["backup"]
++    # A successful fallback call counts as an overall success for the circuit breaker.
++    assert middleware._circuit_failure_count == 0
++
++
++@pytest.mark.anyio
++async def test_async_fallback_model_used_after_primary_exhausts_retries(monkeypatch: pytest.MonkeyPatch) -> None:
++    async def _noop_sleep(_d: float) -> None:
++        return None
++
++    monkeypatch.setattr(asyncio, "sleep", _noop_sleep)
++    middleware = _build_middleware_with_fallback(
++        fallback_models=["backup"],
++        other_models=["backup"],
++        retry_max_attempts=2,
++    )
++
++    fake_backup_model = _FakeChatModel("backup")
++    monkeypatch.setattr(
++        "deerflow.models.factory.create_chat_model",
++        lambda name, *, app_config, attach_tracing: fake_backup_model,
++    )
++
++    request = _FakeModelRequest(_FakeChatModel("primary"))
++
++    async def handler(req: _FakeModelRequest) -> AIMessage:
++        if req.model.label == "primary":
++            raise FakeError("Server Error", status_code=502)
++        return AIMessage(content=f"handled by {req.model.label}")
++
++    result = await middleware.awrap_model_call(request, handler)
++    assert result.content == "handled by backup"
++
++
++def test_fallback_tried_on_quota_error() -> None:
++    """A quota/billing failure on the primary is exactly the case fallback exists for."""
++    middleware = _build_middleware_with_fallback(fallback_models=["backup"], other_models=["backup"])
++
++    fake_backup_model = _FakeChatModel("backup")
++    import deerflow.models.factory as factory_module
++
++    original = factory_module.create_chat_model
++    factory_module.create_chat_model = lambda name, *, app_config, attach_tracing: fake_backup_model
++    try:
++        request = _FakeModelRequest(_FakeChatModel("primary"))
++
++        def handler(req: _FakeModelRequest) -> AIMessage:
++            if req.model.label == "primary":
++                raise FakeError("Quota exceeded", body={"error": {"code": "insufficient_quota"}})
++            return AIMessage(content="handled by backup")
++
++        result = middleware.wrap_model_call(request, handler)
++        assert result.content == "handled by backup"
++    finally:
++        factory_module.create_chat_model = original
++
++
++def test_fallback_chain_exhausted_returns_final_provider_message(monkeypatch: pytest.MonkeyPatch) -> None:
++    """When every model in the chain fails, the message reflects the last failure."""
++    monkeypatch.setattr("time.sleep", lambda _d: None)
++    middleware = _build_middleware_with_fallback(
++        fallback_models=["backup"],
++        other_models=["backup"],
++        retry_max_attempts=1,
++    )
++    monkeypatch.setattr(
++        "deerflow.models.factory.create_chat_model",
++        lambda name, *, app_config, attach_tracing: _FakeChatModel(name),
++    )
++
++    request = _FakeModelRequest(_FakeChatModel("primary"))
++
++    def handler(req: _FakeModelRequest) -> AIMessage:
++        raise FakeError(f"{req.model.label} is down", status_code=503)
++
++    result = middleware.wrap_model_call(request, handler)
++    assert result.additional_kwargs.get("error_reason") == "transient"
++    assert "primary is down" not in result.content  # generic user-facing copy, not the raw detail
++    # Both the primary and the one configured fallback were attempted.
++    assert middleware._circuit_failure_count == 1
++
++
++def test_fallback_not_attempted_for_unclassified_generic_errors(monkeypatch: pytest.MonkeyPatch) -> None:
++    """An unclassified ('generic') error does not trigger a provider swap."""
++    middleware = _build_middleware_with_fallback(fallback_models=["backup"], other_models=["backup"])
++    build_calls: list[str] = []
++    monkeypatch.setattr(
++        "deerflow.models.factory.create_chat_model",
++        lambda name, *, app_config, attach_tracing: (build_calls.append(name), _FakeChatModel(name))[1],
++    )
++
++    request = _FakeModelRequest(_FakeChatModel("primary"))
++
++    def handler(req: _FakeModelRequest) -> AIMessage:
++        raise ValueError("totally unexpected bug")
++
++    result = middleware.wrap_model_call(request, handler)
++    assert result.additional_kwargs.get("error_reason") == "generic"
++    assert build_calls == []  # fallback model was never even built
++
++
++def test_fallback_model_build_failure_is_skipped(monkeypatch: pytest.MonkeyPatch) -> None:
++    """A fallback that fails to construct (bad credentials/class path) is skipped, not fatal."""
++    monkeypatch.setattr("time.sleep", lambda _d: None)
++    middleware = _build_middleware_with_fallback(
++        fallback_models=["backup"],
++        other_models=["backup"],
++        retry_max_attempts=1,
++    )
++
++    def broken_factory(name, *, app_config, attach_tracing):
++        raise RuntimeError("missing API key")
++
++    monkeypatch.setattr("deerflow.models.factory.create_chat_model", broken_factory)
++
++    request = _FakeModelRequest(_FakeChatModel("primary"))
++
++    def handler(req: _FakeModelRequest) -> AIMessage:
++        raise FakeError("Server Error", status_code=502)
++
++    result = middleware.wrap_model_call(request, handler)
++    # No usable fallback candidate: falls straight through to the primary's own failure message.
++    assert result.additional_kwargs.get("error_reason") == "transient"
+diff --git a/backend/tests/test_model_config.py b/backend/tests/test_model_config.py
+index 2044a66..01265fa 100644
+--- a/backend/tests/test_model_config.py
++++ b/backend/tests/test_model_config.py
+@@ -41,3 +41,13 @@ def test_context_window_round_trips_when_positive():
+ def test_context_window_rejects_non_positive_capacity(context_window):
+     with pytest.raises(ValidationError, match="context_window"):
+         _make_model(context_window=context_window)
++
++
++def test_fallback_models_defaults_to_none():
++    assert _make_model().fallback_models is None
++
++
++def test_fallback_models_round_trips_in_model_dump():
++    config = _make_model(fallback_models=["openai-fallback", "another-fallback"])
++    assert config.fallback_models == ["openai-fallback", "another-fallback"]
++    assert config.model_dump(exclude_none=True)["fallback_models"] == ["openai-fallback", "another-fallback"]
+diff --git a/backend/tests/test_model_factory.py b/backend/tests/test_model_factory.py
+index dd816bb..fcd5153 100644
+--- a/backend/tests/test_model_factory.py
++++ b/backend/tests/test_model_factory.py
+@@ -155,6 +155,21 @@ def test_context_window_never_reaches_the_provider_client(monkeypatch):
+     assert "context_window" not in FakeChatModel.captured_kwargs
+ 
+ 
++def test_fallback_models_never_reaches_the_provider_client(monkeypatch):
++    """`models[*].fallback_models` is orchestration metadata consumed by
++    LLMErrorHandlingMiddleware, not a provider constructor kwarg (same class of
++    bug as pricing/context_window leaking into the completion request payload)."""
++    model = _make_model("primary")
++    model.fallback_models = ["backup"]
++    cfg = _make_app_config([model, _make_model("backup")])
++    _patch_factory(monkeypatch, cfg)
++
++    FakeChatModel.captured_kwargs = {}
++    factory_module.create_chat_model(name="primary")
++
++    assert "fallback_models" not in FakeChatModel.captured_kwargs
++
++
+ def test_context_window_attaches_langchain_profile(monkeypatch):
+     """The declared context window is translated into the langchain ``profile``
+     so profile-dependent features (e.g. SummarizationMiddleware fraction triggers,
+diff --git a/backend/tests/test_tool_error_handling_middleware.py b/backend/tests/test_tool_error_handling_middleware.py
+index 1c6fe0c..93d7de7 100644
+--- a/backend/tests/test_tool_error_handling_middleware.py
++++ b/backend/tests/test_tool_error_handling_middleware.py
+@@ -68,8 +68,9 @@ def _stub_runtime_middleware_imports(monkeypatch: pytest.MonkeyPatch) -> None:
+             self.kwargs = kwargs
+ 
+     class FakeLLMErrorHandlingMiddleware:
+-        def __init__(self, *, app_config):
++        def __init__(self, *, app_config, model_name=None):
+             self.app_config = app_config
++            self.model_name = model_name
+ 
+     monkeypatch.setitem(
+         sys.modules,
+@@ -110,8 +111,9 @@ def test_build_subagent_runtime_middlewares_threads_app_config_to_llm_middleware
+             self.kwargs = kwargs
+ 
+     class FakeLLMErrorHandlingMiddleware:
+-        def __init__(self, *, app_config):
++        def __init__(self, *, app_config, model_name=None):
+             captured["app_config"] = app_config
++            captured["model_name"] = model_name
+ 
+     app_config = _make_app_config()
+ 
+diff --git a/config.example.yaml b/config.example.yaml
+index 0653e5d..6f83364 100644
+--- a/config.example.yaml
++++ b/config.example.yaml
+@@ -20,7 +20,7 @@
+ # ============================================================================
+ # Bump this number when the config schema changes.
+ # Run `make config-upgrade` to merge new fields into your local config.yaml.
+-config_version: 45
++config_version: 46
+ 
+ # Optional per-model request pacing (inside a models[] entry):
+ # request_admission:
+@@ -145,6 +145,16 @@ max_recursion_limit: 1000
+ #     output_per_million: 32.0         # price per 1M output tokens
+ #     input_cache_hit_per_million: 0.8 # price per 1M cache-hit input tokens
+ #                                      # (optional; omit → hits billed at miss price)
++#
++# Optional cross-provider fallback (inside a models[] entry):
++#   fallback_models: [gpt-4]   # names of other models[] entries, tried in order
++# If a request to this model exhausts its own retry budget, or is rejected for
++# a quota/billing or authentication reason, DeerFlow retries the same request
++# against the first fallback model, then the next, before giving up. Typical
++# use: point a Claude model at an OpenAI (or other provider) model so a run
++# keeps going through a rate limit or a billing issue instead of failing
++# outright. Off unless configured; each fallback needs its own working
++# credentials. See the Claude Sonnet example below for a worked case.
+ 
+ models:
+   # Example: Volcengine (Doubao) model
+@@ -339,6 +349,11 @@ models:
+   #   when_thinking_disabled:
+   #     thinking:
+   #       type: disabled
++  #   # Fall through to the OpenAI model below (needs its own api_key/credentials)
++  #   # if Claude exhausts retries on a rate limit, or rejects the request for a
++  #   # quota/billing or auth reason. Requires an entry named "gpt-4" in this
++  #   # models[] list (see the "Example: OpenAI model" block above).
++  #   fallback_models: [gpt-4]
+ 
+   # Example: Google Gemini model (native SDK, no thinking support)
+   # - name: gemini-2.5-pro
+-- 
+2.43.0
+
