@@ -1,41 +1,46 @@
-# DeerFlow — Project Notes
+# Agent Reach — Project Notes
 
-This is reference context on [bytedance/deer-flow](https://github.com/bytedance/deer-flow) so it's loaded automatically when Claude Code opens this repo. See `README.md` for the full write-up; summary below.
+This is reference context on [Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach) so it's loaded automatically when Claude Code opens this repo. See `README.md` for the full write-up; summary below.
 
 ## What it is
 
-DeerFlow (Deep Exploration and Efficient Research Flow) is an open-source, long-horizon "super agent" harness (MIT license, Python backend + Node.js frontend). It orchestrates sub-agents, memory, and sandboxes via tools and extensible skills to research, code, and create over tasks lasting minutes to hours. v2.0 is a ground-up rewrite sharing no code with v1 (v1 lives on the `1.x` branch).
+Agent Reach (MIT license, Python 3.10+) is an installer/doctor/config **capability layer**, not a wrapper: it selects, installs, and health-checks the best current upstream tool for reading/searching 16 internet platforms, then lets the agent call that tool directly — no wrapping layer at read time.
 
-## Core capabilities
+**PyPI name collision:** `pip install agent-reach` resolves to an unrelated squatted package. Always install from GitHub, never PyPI, per the instructions below.
 
-- Sub-agents for decomposing long-horizon tasks
-- Sandbox execution (Docker/container, provisioner, or E2B-backed)
-- Long-term memory
-- Skills & tools (`.agent/skills`) plus MCP server integration
-- A Gateway service owning the agent runtime, SSE streaming, and run lifecycle
-- IM channel integrations and Claude Code (OAuth) provider support
+## Zero-config vs. configured platforms
 
-## Getting started
+- **Works immediately:** web pages (Jina Reader), YouTube captions/search (yt-dlp), RSS/Atom (feedparser), GitHub public repos (gh CLI), Bilibili search/details (bili-cli), V2EX, Xueqiu (雪球) stock data, full-web semantic search (Exa via mcporter, auto-configured, no key).
+- **Needs login/config:** Twitter/X, Reddit, Facebook, Instagram, Xiaohongshu, LinkedIn (profile/company/jobs), Boss Zhipin, Xiaoyuzhou podcast transcription. The agent walks the user through "help me configure X" rather than requiring docs.
 
-```bash
-git clone https://github.com/bytedance/deer-flow.git
-cd deer-flow
-make setup   # interactive wizard -> config.yaml + .env
-make dev     # or: make docker-start / make up (prod)
+## Design
+
+Each platform is an ordered **primary + fallback backend list** in `agent_reach/channels/*.py`, probed for real (not just checked on `$PATH`). `agent-reach doctor` reports which backend is active per platform. When an upstream tool breaks (e.g. anti-scraping), the fallback swaps in without user action.
+
+## Installing (agent-run, one-liner)
+
+```
+Help me install Agent Reach: https://raw.githubusercontent.com/Panniantong/agent-reach/main/docs/install.md
 ```
 
-Default local URL: `http://localhost:2026`. Use `make doctor` to validate setup and `make support-bundle` when filing issues.
+```bash
+# Preferred, from real GitHub source
+pipx install https://github.com/Panniantong/agent-reach/archive/main.zip
 
-## Sizing quick reference
+# Safe, read-only check (no system changes)
+agent-reach install --env=auto
+agent-reach doctor
+```
 
-- Local eval: 4 vCPU/8GB min, 8 vCPU/16GB recommended
-- Docker dev: 4 vCPU/8GB min, 8 vCPU/16GB recommended
-- Long-running server: 8 vCPU/16GB min, 16 vCPU/32GB recommended
+`agent-reach install` defaults to a **read-only check** — it does not install system packages (`gh`, `mcporter`) or write config/skill files unless `--system` is explicitly passed. `--dry-run` previews everything with no changes.
 
-## Production notes
+## Rules for this session
 
-- Gateway defaults to a single worker; multi-worker needs Postgres + Redis stream bridge + run-ownership heartbeats + DB-backed event store.
-- Login uses HttpOnly cookies; passwords are never stored client-side.
-- Split-origin browser clients need `GATEWAY_CORS_ORIGINS` set explicitly (same-origin nginx has no CORS headers by default).
+- Only run `agent-reach install --env=auto --system` or any `agent-reach configure ...` (cookie/API-key) command after the user in the current conversation has explicitly approved it.
+- For platforms needing login cookies (Twitter, Xiaohongshu, Reddit, Facebook, Instagram), the project recommends a **dedicated/secondary account** — never the user's primary — due to automated-access ban risk. Surface this before helping configure one.
+- Credentials live only in `~/.agent-reach/config.yaml` (mode 600), never uploaded; the codebase is fully open source and auditable.
+- Never modify upstream open-source tools' internals — Agent Reach only routes/calls them.
 
-Links: [deerflow.tech](https://deerflow.tech) · [github.com/bytedance/deer-flow](https://github.com/bytedance/deer-flow)
+Full install docs: https://raw.githubusercontent.com/Panniantong/agent-reach/main/docs/install.md
+
+Links: [github.com/Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach)
