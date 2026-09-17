@@ -115,6 +115,25 @@ directory](https://github.com/obra/superpowers/tree/main/skills).
 visual design when building or reshaping a UI, so Claude Code reaches for it
 on frontend/design work instead of defaulting to templated layouts.
 
+## Additional anthropics/skills vendored
+
+Beyond `frontend-design`, three more skills from
+[anthropics/skills](https://github.com/anthropics/skills/tree/main/skills)
+(Apache 2.0, each with its own `LICENSE.txt`) are vendored under
+`.claude/skills/`, chosen for coding/dev relevance:
+
+- **`mcp-builder`** — guide for building high-quality MCP servers (Python
+  FastMCP or Node/TypeScript MCP SDK), with reference docs and evaluation
+  scripts. Relevant since this repo already wires up an MCP server
+  (`perplexity` in `.mcp.json`).
+- **`webapp-testing`** — Playwright-based toolkit for testing local web
+  apps: verifying frontend behavior, capturing screenshots, reading
+  browser/console logs.
+- **`claude-api`** — reference for the Claude API / Anthropic SDK (model
+  IDs, pricing, streaming, tool use, MCP, agents, caching, token counting,
+  model migration), with per-language examples (Python, TypeScript, Go,
+  Java, Ruby, PHP, C#, curl).
+
 ## claude-plugins-official (full vendor)
 
 This repo also vendors the plugins physically bundled in
