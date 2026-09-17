@@ -27,6 +27,15 @@ DeerFlow (**D**eep **E**xploration and **E**fficient **R**esearch **Flow**) is a
 - **LLM Space** — a desktop tool for prototyping agent ideas, inspecting harness steps, replaying failures, and benchmarking performance.
 - **InfoQuest** — an intelligent search/crawling toolset from BytePlus, newly integrated into DeerFlow (free online experience available).
 
+## Patches for deer-flow
+
+[`patches/`](patches/) holds code changes to the actual `bytedance/deer-flow`
+application, produced and tested from a real clone of that repo in a session
+here but delivered as patch files rather than commits to this repo (which
+contains none of DeerFlow's own source) or a direct PR upstream (this
+session had no push access to `bytedance/deer-flow`). See `patches/README.md`
+for what's there and how to apply it.
+
 ## Getting started
 
 ### One-line agent setup
