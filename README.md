@@ -104,3 +104,153 @@ config/mcporter.json   # MCP tool config
 Conventions: Python 3.10+ with type hints; each channel implements `can_handle(url)`, `read(url)`, `search(query)`, `check()`; never modify upstream open-source tools' internals — only route/call them; version string must match across `pyproject.toml`, `__init__.py`, and `tests/test_cli.py`.
 
 Links: [github.com/Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach) · [Agent Skills Hub](https://agentskillshub.top/) · [AtomGit mirror](https://atomgit.com/qq_51337814/Agent-Reach)
+
+## Superpowers skills framework
+
+This repo also vendors the [Superpowers](https://github.com/obra/superpowers)
+skills framework for Claude Code (v6.3.0), so any Claude Code session opened
+against this repo has the full skills library available:
+
+- `.claude/skills/` — the Superpowers skill library (TDD, systematic
+  debugging, brainstorming, subagent-driven development, code review, and
+  more), vendored as project-level skills alongside this repo's other
+  skills (e.g. `perplexity-search`). Discoverable via the `Skill` tool.
+- `.claude/hooks/session-start` — bootstrap hook (adapted from Superpowers'
+  own plugin hook) that injects the `using-superpowers` skill as context at
+  the start of every session. Wired up in `.claude/settings.json` alongside
+  the existing `session-start.sh` hook — both run.
+- `.claude/THIRD_PARTY_NOTICE_superpowers_LICENSE` — the upstream MIT
+  license.
+
+To pick up upstream updates, re-sync `.claude/skills/` (excluding
+`perplexity-search`, which is this repo's own) from the [upstream `skills/`
+directory](https://github.com/obra/superpowers/tree/main/skills).
+
+## frontend-design skill
+
+`.claude/skills/frontend-design/` vendors the `frontend-design` skill from
+[anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design)
+(Apache 2.0, `LICENSE.txt` included) — guidance for distinctive, intentional
+visual design when building or reshaping a UI, so Claude Code reaches for it
+on frontend/design work instead of defaulting to templated layouts.
+
+## Additional anthropics/skills vendored
+
+Beyond `frontend-design`, three more skills from
+[anthropics/skills](https://github.com/anthropics/skills/tree/main/skills)
+(Apache 2.0, each with its own `LICENSE.txt`) are vendored under
+`.claude/skills/`, chosen for coding/dev relevance:
+
+- **`mcp-builder`** — guide for building high-quality MCP servers (Python
+  FastMCP or Node/TypeScript MCP SDK), with reference docs and evaluation
+  scripts. Relevant since this repo already wires up an MCP server
+  (`perplexity` in `.mcp.json`).
+- **`webapp-testing`** — Playwright-based toolkit for testing local web
+  apps: verifying frontend behavior, capturing screenshots, reading
+  browser/console logs.
+- **`claude-api`** — reference for the Claude API / Anthropic SDK (model
+  IDs, pricing, streaming, tool use, MCP, agents, caching, token counting,
+  model migration), with per-language examples (Python, TypeScript, Go,
+  Java, Ruby, PHP, C#, curl).
+
+## claude-plugins-official (full vendor)
+
+This repo also vendors the plugins physically bundled in
+[anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official)
+(Apache 2.0, `.claude/THIRD_PARTY_NOTICE_claude-plugins-official_LICENSE`) —
+the 39 first-party plugins under `plugins/` plus 14 `external_plugins/`
+wrappers (Playwright, GitHub, Linear, Discord, etc.). Note: that repo's
+`marketplace.json` actually lists ~290 plugins total, but all but these ~53
+are just pointers to *separate* third-party repositories — only the ones
+physically present in `plugins/`/`external_plugins/` are vendored here.
+
+- `.claude/vendor/claude-plugins-official/{plugins,external_plugins}/<name>/`
+  — a complete, unmodified copy of every bundled plugin (manifest, skills,
+  commands, agents, hooks, scripts, `.mcp.json`, its own `LICENSE`/`README`
+  where present). This is the source of truth; everything below is derived
+  from it.
+- **Skills** — each plugin's `skills/<name>/` surfaced into
+  `.claude/skills/<name>/` (flattened, skipping `frontend-design`'s copy
+  since it's identical to the one already vendored separately above).
+  Examples: `skill-creator`, `claude-security`, `plugin-dev`'s
+  skill-authoring set, `mcp-server-dev`'s MCP-building skills.
+- **Commands** — each plugin's `commands/*.md` surfaced into
+  `.claude/commands/<plugin-name>/`, giving namespaced slash commands like
+  `/code-review:code-review`, `/commit-commands:commit`,
+  `/ralph-loop:ralph-loop`.
+- **Agents** — each plugin's `agents/*.md` surfaced into
+  `.claude/agents/<plugin-name>-<agent-name>.md` (flattened to avoid name
+  collisions), e.g. the `pr-review-toolkit` and `code-modernization` agent
+  sets.
+
+### Hooks are vendored but intentionally NOT wired up
+
+Six plugins ship a `hooks/hooks.json` (`claude-security`, `hookify`,
+`learning-output-style`, `explanatory-output-style`, `ralph-loop`,
+`security-guidance`). Those files are vendored as-is under
+`.claude/vendor/.../hooks/`, but **not** merged into `.claude/settings.json`,
+so they don't run automatically. Reasons:
+
+- `security-guidance` runs on every `SessionStart`/`PostToolUse`/`Stop` and
+  calls out to an LLM API for git-diff review, plus a 180s dependency-install
+  step at session start.
+- `hookify` and `claude-security` execute Python/shell on tool-use events.
+- `learning-output-style` and `explanatory-output-style` are mutually
+  exclusive alternate "output style" modes, not both-on-by-default hooks.
+- `ralph-loop`'s `Stop` hook drives a self-referential loop — high blast
+  radius if enabled unintentionally in a shared repo.
+
+To turn one on deliberately, add its hook entry from
+`.claude/vendor/claude-plugins-official/plugins/<name>/hooks/hooks.json`
+into `.claude/settings.json`, replacing `${CLAUDE_PLUGIN_ROOT}` with the
+vendored path (e.g.
+`.claude/vendor/claude-plugins-official/plugins/<name>`). The cleaner
+alternative is installing the plugin for real via
+`/plugin install <name>@claude-plugins-official`, which sets
+`CLAUDE_PLUGIN_ROOT` correctly and keeps it updated.
+
+### external_plugins `.mcp.json` files
+
+Each `external_plugins/<name>/.mcp.json` is vendored inside that plugin's
+own directory (not at the repo root), so none of them are auto-loaded —
+Claude Code only reads a root-level `.mcp.json`. They're there for
+reference/copy-in if you want to wire one up.
+
+## trending-claude-skills marketplace
+
+`.claude-plugin/marketplace.json` at the repo root lists every entry
+currently in the [`linny006/trending-claude-skills`](https://github.com/linny006/trending-claude-skills)
+leaderboard as an installable Claude Code plugin marketplace.
+
+**⚠️ Unlike the vendored plugins above, this is a mechanical listing, not a
+curated or reviewed one.** Each entry points at its original external GitHub
+repo via the plugin `source` field — nothing from any of these repos has
+been vendored, cloned, or audited here. The upstream leaderboard ranks repos
+by recency/momentum in GitHub search results, not by quality or
+trustworthiness: many entries have zero stars, unknown authors, and
+generic/auto-generated-looking descriptions. A skill's instructions are
+executed as trusted input by whatever agent installs it, so installing one
+from this list means running unaudited third-party instructions and code
+with your agent's permissions.
+
+Before installing any plugin from this marketplace:
+
+- Open its source repo and read the actual skill/plugin files yourself.
+- Check who the author is and whether the repo has any real history/activity.
+- Prefer entries with meaningful star counts and identifiable maintainers.
+- Assume nothing here has been vetted for correctness, safety, or intent.
+
+To use it:
+
+```
+/plugin marketplace add trial4email4timepass/free-claude
+/plugin install <plugin-name>@free-claude
+```
+
+See [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) for
+the full list of plugin names and source repos. Because these are
+third-party repos with no guaranteed structure, not every entry is
+guaranteed to install cleanly as a Claude Code plugin. This list was built
+once from a snapshot of the upstream leaderboard's README (which itself
+refreshes every 15 minutes); this repo does not auto-sync with it, so
+entries here may drift from the live leaderboard over time.
