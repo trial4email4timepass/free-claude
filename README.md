@@ -235,3 +235,131 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## FreeLLMAPI (full vendor)
+
+`.claude/vendor/freellmapi/` is a complete, unmodified copy of
+[tashfeenahmed/freellmapi](https://github.com/tashfeenahmed/freellmapi)
+(MIT, `LICENSE` included) — a self-hosted, OpenAI-compatible router that
+aggregates free tiers from 34+ LLM providers (Google, Groq, Cerebras,
+Mistral, OpenRouter, Cloudflare, Cohere, Z.ai, NVIDIA, HuggingFace, and
+more) behind a single `/v1` API, plus a native Anthropic Messages surface
+so Claude Code can point at it directly. It routes requests to the
+best-available free model/key and falls over to the next one on
+rate-limit/error, tracking per-key usage so you stay under every provider's
+free-tier cap. Provider keys stay local, AES-256-GCM encrypted in a SQLite
+database — nothing here supplies keys or talks to providers on your
+behalf.
+
+- `.claude/skills/freellmapi/` — a project-level skill (not shipped by the
+  upstream project) surfacing how to run the router
+  (`npm install && npm run dev`, or Docker) and wire Claude Code to it via
+  `npx freellmapi setup-claude`, discoverable via the `Skill` tool in any
+  Claude Code session opened against this repo.
+- Vendoring the source here does not start the server or configure
+  anything automatically; see
+  [`docs/en/install/01-install.md`](.claude/vendor/freellmapi/docs/en/install/01-install.md)
+  for full setup and
+  [`docs/en/clients/01-agent-clients.md`](.claude/vendor/freellmapi/docs/en/clients/01-agent-clients.md)
+  for the per-agent connection table.
+- Free tiers have real trade-offs (no SLA, variable latency, capacity that
+  dips as providers' daily caps get hit) — see
+  [the limitations section](.claude/vendor/freellmapi/docs/en/architecture/00-high-level-index.md#limitations)
+  before relying on this for anything production-critical.
+
+## gstack (full vendor, source only — not installed)
+
+`.claude/vendor/gstack/` is a complete, unmodified copy of
+[garrytan/gstack](https://github.com/garrytan/gstack) (MIT, `LICENSE`
+included) — a large suite of Claude Code skills (`/office-hours`,
+`/plan-ceo-review`, `/review`, `/qa`, `/cso`, `/ship`, and 15+ more)
+meant to be installed into `~/.claude/skills/gstack` as a full
+planning/review/QA/security/release workflow.
+
+**⚠️ This is vendored as source only — nothing here is installed, active,
+or auto-discoverable, and its `setup` script has not been run.** Two
+things about the upstream project warranted extra caution before treating
+it like this repo's other full-vendor entries:
+
+- Upstream's own README includes a ready-to-paste "install block" that
+  asks an agent to clone into the user's real `~/.claude/skills/`, run a
+  ~150 KB shell script sight-unseen, and edit the user's **global**
+  `~/.claude/CLAUDE.md` to add a standing instruction to never use a
+  specific tool (`mcp__claude-in-chrome__*`). Untrusted code execution
+  plus a self-inserted tool suppression is the shape of a prompt-injection
+  payload, so those steps were not followed here.
+- gstack's own `SKILL.md` is written as standing operating instructions
+  for whatever agent loads it — proactively auto-invoking other gstack
+  skills without being asked, treating certain future tool output as
+  executable "instruction blocks," and shelling out to telemetry scripts
+  on every run — a much larger behavioral surface than a typical vendored
+  CLI. It was deliberately **not** copied into this repo's discoverable
+  `.claude/skills/` path.
+
+- `.claude/skills/gstack/` — a project-level skill (not gstack's own)
+  that documents what gstack is and quotes its command table, without
+  implementing or triggering any of its behavior. It also spells out the
+  safety reasoning above and what a user should check before running
+  gstack's real installer themselves.
+- If you want to actually use gstack, read `.claude/vendor/gstack/setup`
+  and the `bin/*` scripts it calls before running them, and decide for
+  yourself whether to keep the tool-restriction line it wants to add to
+  global config — don't let it add that silently.
+
+## GitHub Tools & Projects Resource
+
+A curated set of repositories from four external GitHub developers, kept
+here as study material. Compiled from each developer's public profile and
+repository READMEs; project descriptions are paraphrased rather than
+copied. **Repository names, technologies, and capabilities should be
+rechecked against the live repos before relying on this**, since
+open-source projects change. Status per project:
+
+- **Vendored** — a complete, unmodified copy sits under `.claude/vendor/<name>/`, license verified beforehand (Apache-2.0, MIT, or GPLv3 — all permit redistribution of an unmodified copy with the license retained, which is what's here). Nothing vendored is installed, run, or wired up as a skill; it's source to read.
+- **Reference only (no license found)** — the upstream repo has no `LICENSE` file. Copying source with no stated license isn't clearly permitted (GitHub's own terms cover viewing/forking, not redistribution elsewhere), so these are linked, not copied.
+- **Excluded** — see the note below.
+
+### [grqz](https://github.com/grqz) — low-level web & media tooling
+
+A contributor/maintainer in the `yt-dlp` ecosystem (listed as a triage
+maintainer on the project) working on YouTube extraction, JS challenge
+handling, and TLS/browser fingerprinting.
+
+- **Vendored** — [yt-dlp-apple-webkit-jsi](https://github.com/grqz/yt-dlp-apple-webkit-jsi) → `.claude/vendor/yt-dlp-apple-webkit-jsi/` (Apache-2.0). A `yt-dlp` plugin using Apple's WebKit framework as a JavaScript challenge provider for YouTube extraction. Python; `yt-dlp` plugin architecture.
+- **Reference only** — [bgutil-ytdlp-pot-provider](https://github.com/grqz/bgutil-ytdlp-pot-provider) (no LICENSE file found upstream). Generates tokens for YouTube's anti-abuse/request-validation mechanisms. Python/JS.
+- **Reference only** — [ssl_imp](https://github.com/grqz/ssl_imp) (no LICENSE file found upstream). A C/OpenSSL project reproducing Chrome's TLS fingerprint.
+
+### [WitherOrNot](https://github.com/WitherOrNot) — Windows internals & reverse engineering
+
+Focused on Windows Component-Based Servicing (CBS), licensing mechanisms,
+and low-level system behavior — an area with limited official
+documentation.
+
+- **Vendored** — [cbsexploder](https://github.com/WitherOrNot/cbsexploder) → `.claude/vendor/cbsexploder/` (GPLv3). A CBS client for offline Windows servicing: stage, install, uninstall, and enumerate packages in an offline image. C#.
+- **Reference only** — [cbs-docs](https://github.com/WitherOrNot/cbs-docs) (no LICENSE file found upstream). Reverse-engineered documentation of CBS architecture and image-deployment behavior.
+- **Excluded** — [TSforge](https://github.com/massgravel/TSforge) and [UMSKT](https://github.com/UMSKT/UMSKT). Both are, functionally, Windows/Office activation-bypass and product-key-generation tools (TSforge: activation exploits spanning Vista–11; UMSKT: a "Universal MDL Serial Keygen Tool" for pre-Vista Microsoft products). Regardless of their GPLv3/AGPLv3 licenses, vendoring license-circumvention tooling into this repo isn't something this assistant will do — linked here for reference only, not copied.
+
+### [yuliskov](https://github.com/yuliskov) — Android TV & media software
+
+- **Vendored** — [SmartTube](https://github.com/yuliskov/SmartTube) → `.claude/vendor/SmartTube/` (MIT). A free, open-source Android TV/TV-box media client: SponsorBlock integration, adjustable playback speed, 8K/60fps/HDR, no Google Services dependency. The largest vendored entry here (~65 MB) — a full user-facing app with playback, TV UX, and networking.
+- **Vendored** — [LeanKeyboard](https://github.com/yuliskov/LeanKeyboard) → `.claude/vendor/LeanKeyboard/` (MIT). A keyboard built for Android TV/set-top-box remote input; no Google Services or root required. Java.
+- **Reference only, not cloned** — [SmartTubeLegacy](https://github.com/yuliskov/SmartTubeLegacy), the archived predecessor to SmartTube. Skipped as redundant (SmartTube is the maintained fork) rather than for a license reason.
+
+### [stevietv](https://github.com/stevietv) — C#/.NET open-source contributions
+
+Maintains a broad profile (100+ repos, C#/JS/SQL/React/TypeScript). The
+most notable associated project:
+
+- **Vendored** — [Sonarr](https://github.com/Sonarr/Sonarr) → `.claude/vendor/Sonarr/` (GPLv3). A mature, production-scale PVR-style application for automatically managing and downloading TV series. C#/.NET. Per the source write-up, check which parts of stevietv's own profile are original work vs. contributions to projects like this one, rather than assuming full authorship.
+
+### If you want to look closer
+
+| Project | Status | What it's good for studying |
+| --- | --- | --- |
+| `yt-dlp-apple-webkit-jsi` | vendored | Plugin architecture + platform browser internals |
+| `ssl_imp` | reference only | Networking + TLS fingerprinting |
+| `cbs-docs` | reference only | Windows internals via reverse engineering |
+| `cbsexploder` | vendored | Turning RE findings into a systems tool |
+| `SmartTube` | vendored | Large-scale Android TV app engineering |
+| `LeanKeyboard` | vendored | TV UX + constrained-input design |
+| `Sonarr` | vendored | Production .NET/C# service architecture |
