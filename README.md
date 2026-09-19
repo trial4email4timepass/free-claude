@@ -298,6 +298,35 @@ get auto-updates — is installing it for real:
 
 (Two separate prompts, per upstream's install notes.)
 
+## Octop (reference note, not vendored)
+
+[TencentCloud/Octop](https://github.com/TencentCloud/Octop) (MIT) is a
+self-hosted, multi-user, multi-agent AI assistant platform — a FastAPI
+backend + React dashboard + Go/Electron desktop client, distributed as one
+Python wheel. It's a full standalone application, not a Claude Code
+plugin/skill: the repo has no `.claude-plugin/` manifest and no
+`.claude/skills/` — its only "skill" file
+(`.cursor/skills/publish/SKILL.md`) is a Cursor-specific release-automation
+script for Octop's own maintainers, not something useful to a Claude Code
+user.
+
+It's noted here (rather than vendored like the entries above) because it
+does integrate *with* Claude Code: its `octop acp` mode is a bidirectional
+[ACP](https://agentclientprotocol.com/) bridge that can delegate terminal/IDE
+AI work to Claude Code (or OpenCode) under permission gates. That makes it
+something to run *alongside* Claude Code, not something to fold into this
+repo's skill set — same reasoning as the DeerFlow notes at the top of this
+README/`CLAUDE.md`, which document a similarly large standalone platform
+rather than vendor it.
+
+- Highlights: multi-user "expert" personas (MBTI-templated), a connector
+  ecosystem (OAuth + MCP gateway), pluggable storage backends (local disk,
+  Docker, Postgres, COS/S3), portable memory, RAG knowledge base, IM
+  integrations (Feishu, DingTalk, QQ, Discord, WeCom), and a browser-AI+
+  mode (headless Chromium automation).
+- Install: `pip install octop` (PyPI) or Docker/desktop builds — see
+  upstream README for `octop` CLI usage and the `octop acp` integration.
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
