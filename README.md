@@ -197,6 +197,50 @@ own directory (not at the repo root), so none of them are auto-loaded —
 Claude Code only reads a root-level `.mcp.json`. They're there for
 reference/copy-in if you want to wire one up.
 
+## ponytail (full vendor)
+
+This repo also vendors [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
+(MIT, `.claude/THIRD_PARTY_NOTICE_ponytail_LICENSE`) — a "lazy senior dev"
+skill set that pushes Claude toward the simplest, shortest solution that
+actually works (YAGNI, stdlib/native first, no unrequested abstractions),
+plus tooling to review, audit, and track the deliberate shortcuts it leaves
+behind.
+
+- `.claude/vendor/ponytail/` — a complete, unmodified copy of the
+  Claude-Code-relevant parts of the upstream repo (it's a multi-agent plugin;
+  the Cursor/Windsurf/Codex/Gemini/etc. integrations aren't vendored here):
+  `.claude-plugin/` manifest, `hooks/` (the three lifecycle hook scripts plus
+  their shared config/instructions/runtime modules), and `skills/`. This is
+  the source of truth; everything below is derived from it.
+- **Skills** — all six skills surfaced into `.claude/skills/<name>/`:
+  `ponytail` (the mode itself, `/ponytail lite|full|ultra`), `ponytail-review`
+  (over-engineering-focused diff review), `ponytail-audit` (same, whole-repo),
+  `ponytail-debt` (harvests `ponytail:` shortcut comments into a ledger), and
+  `ponytail-gain`/`ponytail-help` (scoreboard and reference card).
+
+### Hooks are vendored but intentionally NOT wired up
+
+`hooks/claude-codex-hooks.json` declares a `SessionStart` hook (fires on every
+session start/resume/clear/compact), a `SubagentStart` hook, and a
+`UserPromptSubmit` hook — each shelling out to a Node script. Vendored as-is
+under `.claude/vendor/ponytail/hooks/`, but **not** merged into
+`.claude/settings.json`, for the same reason the `claude-plugins-official`
+hooks above are left unwired: a hook that runs unconditionally on every
+session/prompt is high blast radius to enable silently in a shared repo, and
+`node` needs to be on `PATH` for it to work at all.
+
+To turn it on deliberately, merge `.claude/vendor/ponytail/hooks/claude-codex-hooks.json`'s
+`hooks` block into `.claude/settings.json`, replacing `${CLAUDE_PLUGIN_ROOT}`
+with `.claude/vendor/ponytail`. The cleaner alternative — and the only way to
+get auto-updates — is installing it for real:
+
+```
+/plugin marketplace add DietrichGebert/ponytail
+/plugin install ponytail@ponytail
+```
+
+(Two separate prompts, per upstream's install notes.)
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
