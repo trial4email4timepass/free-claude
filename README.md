@@ -197,6 +197,63 @@ own directory (not at the repo root), so none of them are auto-loaded —
 Claude Code only reads a root-level `.mcp.json`. They're there for
 reference/copy-in if you want to wire one up.
 
+## rtk-plugin (full vendor, hooks NOT wired)
+
+This repo also vendors [enixCode/rtk-plugin](https://github.com/enixCode/rtk-plugin)
+(MIT, `.claude/THIRD_PARTY_NOTICE_rtk-plugin_LICENSE`) under
+`.claude/vendor/rtk-plugin/` — a plugin that transparently compresses the
+output of every `Bash` tool call (`git status`, `pnpm install`, etc.) by
+wrapping commands with the [RTK](https://github.com/rtk-ai/rtk) binary, to
+cut context-window usage on noisy shell output. Its one slash command is
+surfaced live at `.claude/commands/rtk-plugin/gain.md` (`/rtk-plugin:gain`,
+a token-savings dashboard).
+
+**This one is not wired up, and for a stronger reason than the hooks left
+unwired elsewhere in this repo.** `hooks/hooks.json` (vendored, not merged
+into `.claude/settings.json`) declares:
+
+- A `SessionStart` hook that **downloads and executes a third-party binary**
+  (the pinned RTK release, ~5 MB) into `${CLAUDE_PLUGIN_DATA}/rtk/` and runs
+  `rtk init -g`, automatically, on every session start.
+- A `PreToolUse` hook on every `Bash` call that **rewrites the command**
+  before it runs, prefixing recognized programs (`git`, `cargo`, `pnpm`, …)
+  with the downloaded `rtk` binary.
+
+That's a materially larger trust boundary than an instructional skill or a
+review hook: it fetches and runs an external binary and transparently alters
+what command actually executes. Vendored here for reference/audit only. To
+use it for real, install it as an actual plugin (which is also the only way
+to get pinned-version updates and the upstream maintainer's release process
+behind it, rather than a static snapshot):
+
+```
+/plugin marketplace add enixCode/plugins
+/plugin install rtk-plugin@enix
+```
+
+## ui-ux-pro-max-skill (full vendor)
+
+This repo also vendors [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+(MIT, `.claude/THIRD_PARTY_NOTICE_ui-ux-pro-max-skill_LICENSE`) — a UI/UX
+design-intelligence skill set backed by local searchable data (79 UI styles,
+192 color palettes, 74 font pairings, 119 UX guidelines, 25 chart types,
+across 22 tech stacks: React, Next.js, Vue, Svelte, SwiftUI, Flutter,
+Tailwind/shadcn-ui, Angular, and more). Upstream is a large multi-tool repo
+(a CLI, a Next.js gallery site, docs); only the Claude Code plugin surface —
+`.claude-plugin/`, `skill.json`, and the `.claude/skills/` tree — is vendored
+here, matching how this repo already handles multi-target upstream repos.
+
+- `.claude/vendor/ui-ux-pro-max-skill/` — source-of-truth copy (~11 MB: the
+  seven skills' `SKILL.md` files plus their `data/` (CSV/JSON palettes,
+  fonts, styles), `scripts/` (Python), `references/`, `templates/`, and font
+  assets under `ui-styling/canvas-fonts/`).
+- `.claude/skills/{banner-design,brand,design,design-system,slides,
+  ui-styling,ui-ux-pro-max}/` — all seven skills surfaced and live, complete
+  with their data/scripts/assets (not flattened to just `SKILL.md`, since
+  several of them read local data files and run local scripts at use time).
+
+No hooks ship with this plugin, so there's no wiring decision to make here.
+
 ## ponytail (full vendor)
 
 This repo also vendors [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
