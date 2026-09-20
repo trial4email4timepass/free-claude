@@ -402,6 +402,40 @@ rather than vendor it.
 - Install: `pip install octop` (PyPI) or Docker/desktop builds — see
   upstream README for `octop` CLI usage and the `octop acp` integration.
 
+## OpenManus (reference note, not vendored)
+
+[FoundationAgents/OpenManus](https://github.com/FoundationAgents/OpenManus)
+(MIT) is a standalone, open-source general-purpose AI agent framework in
+Python, from ex-MetaGPT contributors — an open alternative to the (closed,
+invite-only) Manus agent product. Like the DeerFlow and Octop notes above,
+it's a full application you run and configure yourself, not a Claude Code
+plugin or skill: no `.claude-plugin/` manifest and no `SKILL.md` anywhere in
+the repo, so there's nothing here to vendor into `.claude/`.
+
+- Single generalist `OpenManus` agent (`python main.py`), plus a
+  `DataAnalysis` agent for data-analysis/visualization tasks, an MCP-tool
+  entrypoint (`python run_mcp.py`), and an experimental multi-agent flow
+  runner (`python run_flow.py`).
+- Any OpenAI-compatible LLM API via `config/config.toml` (model, base URL,
+  API key; a separate `[llm.vision]` block for vision calls).
+- Browser automation defaults to Browser Use's CLI 3.0 as an MCP server
+  (`uvx browser-use --cli-mcp`, isolated via `uvx`), attaching to local
+  Chrome/Chromium with no API key needed; a Browser Use Cloud remote browser
+  is opt-in via `BROWSER_USE_API_KEY`. BrowserGym support needs its own
+  `playwright install`.
+- Install: conda or `uv` (recommended) + `pip install -r requirements.txt`
+  (or `uv pip install -r requirements.txt`), then set up `config/config.toml`
+  from `config/config.example.toml`.
+
+```bash
+git clone https://github.com/FoundationAgents/OpenManus.git
+cd OpenManus
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install -r requirements.txt
+cp config/config.example.toml config/config.toml   # then add your API key
+python main.py
+```
+
 ## OpenDesign (reference note, not vendored)
 
 [nexu-io/open-design](https://github.com/nexu-io/open-design) (Apache-2.0)
