@@ -1,0 +1,11 @@
+# Secrets / local overrides
+.env
+.claude/settings.local.json
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
