@@ -436,6 +436,45 @@ cp config/config.example.toml config/config.toml   # then add your API key
 python main.py
 ```
 
+## OpenDesign (reference note, not vendored)
+
+[nexu-io/open-design](https://github.com/nexu-io/open-design) (Apache-2.0)
+is a large, local-first design application (pnpm monorepo, ~13k files) that
+exposes its projects, files, preview, and a big skill/design-system library
+to coding agents over MCP. Unlike the DeerFlow/Octop/OpenManus notes above,
+it *does* ship a genuine Claude Code plugin — but that plugin is an MCP
+server, not a set of copy-in skills, so the right way to "add it to Claude"
+is to install the plugin and run its daemon, not to vendor anything here.
+
+Why it's referenced rather than vendored:
+
+- **The skills are runtime content, not standalone `SKILL.md` files.** Its
+  `skills/` tree (~163 `SKILL.md`s across `prototype`, `design-system`,
+  `image`, `video`, `template`, `deck`, `audio`, `utility` modes), plus 154
+  `design-systems/` and 115 `design-templates/`, are served by the local
+  `od` daemon over MCP and carry `od:`-namespaced metadata; many are
+  themselves curated from other upstreams (Anthropic's skills, `taste-skill`,
+  etc.). They aren't meant to be dropped into `.claude/skills/` individually,
+  and copying them would strip the daemon they depend on.
+- **The one true Claude Code project skill in the repo,
+  `.claude/skills/od-contribute`, is hard-locked to `nexu-io/open-design`**
+  (a first-contribution/PR flow for that repo), so it has no use inside this
+  repo.
+
+How to actually add it to your agent (requires the `od` daemon on PATH —
+`brew` / `npm` / DMG per upstream):
+
+```
+/plugin marketplace add nexu-io/open-design
+/plugin install open-design@open-design
+```
+
+The plugin (`plugins/open-design`) wires a single stdio MCP server that runs
+`od mcp --daemon-url http://127.0.0.1:7456`, so the local OpenDesign daemon
+must be installed and running for the tools to resolve. OpenDesign also has
+its own plugin spec + registry (`plugins/spec/`, `plugins/registry/`) for
+authoring and publishing OD plugins, separate from Claude Code's.
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
