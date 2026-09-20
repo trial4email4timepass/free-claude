@@ -298,6 +298,81 @@ get auto-updates — is installing it for real:
 
 (Two separate prompts, per upstream's install notes.)
 
+## awesome-llm-apps agent_skills (partial vendor)
+
+This repo also vendors the `agent_skills/` directory of
+[Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps)
+(Apache-2.0, `.claude/THIRD_PARTY_NOTICE_awesome-llm-apps-agent-skills_LICENSE`)
+— a collection of genuine `SKILL.md`-format skills for coding agents (Claude
+Code, Codex, Cursor, and others), distinct from the rest of that repository,
+which is ~100 standalone example AI agent/RAG applications (see the
+reference note below) rather than installable skills.
+
+- `.claude/vendor/awesome-llm-apps-agent-skills/` — an unmodified copy of the
+  upstream `agent_skills/` directory: its `README.md`, `LICENSE`, the seven
+  skills below, and their shared `evals/` (each skill ships an executable
+  eval upstream; kept here for reference/audit rather than run automatically).
+  This is the source of truth; everything below is derived from it.
+- **Skills** — surfaced live (with their own `references/`/`scripts/`, not
+  flattened to just `SKILL.md`) into `.claude/skills/<name>/`:
+  - `project-graveyard` — scans local git history for abandoned side
+    projects, autopsies why each died, and recommends one to resurrect
+  - `commit-archaeologist` — reconstructs why a piece of code exists from its
+    introducing commit, later edits, and companion files
+  - `dependency-doctor` — audits `requirements.txt`/`pyproject.toml`/
+    `package.json` for stdlib-shadowing pins, abandoned backports, and
+    unpinned/conflicting entries (offline by default; PyPI yanked-release
+    checks are opt-in via an explicit `--online` flag)
+  - `first-reader` — simulates real readers moving through a draft to report
+    where attention breaks, without rewriting anything
+  - `scope-creep-detector` — checks a git diff against its stated intent and
+    flags unrelated files, oversized hunks, or scope growth
+  - `thinking-out-loud` — turns a rambling voice-dictated brief into an
+    echoed, verifiable summary before the agent acts on it
+  - `advisor-orchestrator-worker` — orchestrates a cheap-worker /
+    expensive-advisor model team with budget and verification gates
+
+  Not surfaced: `self-improving-agent-skills`, which upstream lists in the
+  same table but is a backend+frontend web app (Gemini/ADK-based skill
+  optimizer), not itself a `SKILL.md` skill.
+
+Per upstream's own note, skills run with the installing agent's permissions;
+each of the seven above declares its network use up front (most are fully
+offline) and none has install-time execution — no hooks, no `.mcp.json`, no
+`curl | bash`. Same install path as this repo's other vendored skills: they
+are Claude Code project skills the moment they exist under `.claude/skills/`,
+discoverable via the `Skill` tool. To pick up upstream updates, re-run the
+copy from `agent_skills/` at a newer commit of the upstream repo.
+
+## awesome-llm-apps (reference note, rest not vendored)
+
+Beyond `agent_skills/` (vendored above), the rest of
+[Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps)
+is a large (100+) collection of standalone, hand-built example AI
+agent/RAG/LLM applications — not Claude Code plugins or skills, so there's
+nothing to install into `.claude/`. Noted here rather than vendored, for the
+same reason as the DeerFlow notes at the top of this README/`CLAUDE.md` and
+the Octop note below: a big standalone project, useful as reference, not
+something that folds into this repo's skill set.
+
+- License: Apache-2.0. Site/tutorials: [theunwindai.com](https://www.theunwindai.com).
+- Layout: `starter_ai_agents/` (single-file agents, API key only),
+  `advanced_ai_agents/` (single- and multi-agent apps), `advanced_llm_apps/`,
+  `rag_tutorials/`, `mcp_ai_agents/`, `voice_ai_agents/`,
+  `generative_ui_agents/`, `always_on_agents/`, and
+  `ai_agent_framework_crash_course/`. Each example is its own directory with
+  a `requirements.txt`/`pyproject.toml` and a README; most run with
+  `pip install -r requirements.txt && streamlit run <script>.py` plus an API
+  key for whichever model provider the example targets (Claude, Gemini, GPT,
+  DeepSeek, Llama, Qwen, or a local/open-source model).
+- Quick start for any one example:
+  ```bash
+  git clone https://github.com/Shubhamsaboo/awesome-llm-apps.git
+  cd awesome-llm-apps/starter_ai_agents/ai_travel_agent
+  pip install -r requirements.txt
+  streamlit run travel_agent.py
+  ```
+
 ## Octop (reference note, not vendored)
 
 [TencentCloud/Octop](https://github.com/TencentCloud/Octop) (MIT) is a
