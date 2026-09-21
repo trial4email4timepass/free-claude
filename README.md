@@ -475,6 +475,24 @@ must be installed and running for the tools to resolve. OpenDesign also has
 its own plugin spec + registry (`plugins/spec/`, `plugins/registry/`) for
 authoring and publishing OD plugins, separate from Claude Code's.
 
+## jev-ultrafast (authored skill)
+
+`.claude/skills/jev-ultrafast/` is an authored skill (not vendored — upstream ships no `SKILL.md` or
+`.claude-plugin/`) wrapping [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) (MIT):
+a fast browser agent that picks an indexed `CLICK`/`TYPE_TEXT`/`SELECT`/`SCROLL`/`WAIT`/`DONE` action per
+step from one natural-language goal, instead of generating selectors or scripts. A small text LLM only
+runs for `TYPE_TEXT`; model output never becomes selectors, coordinates, or executable JavaScript.
+
+Unlike this repo's own `webapp-testing` skill (Playwright, deterministic selector-based test scripts),
+jev-ultrafast is for "give it a URL and a plain-language goal" automation — flight/hotel search, form
+fills, find-and-click flows — and is out of scope for shadow DOM, canvas UIs, file uploads, and other cases
+the upstream README calls out as unsupported in its current MVP.
+
+The skill documents setup (`git clone` + `uv sync` + `TYPESAFE_API_KEY`/`TEXT_MODEL_API_KEY` in `.env`,
+Chrome via Browser Harness), the CLI inspector (`uv run jev`), the library usage pattern (`Agent(url,
+goal)`), and the point upstream itself makes: a `DONE` state is not proof of success and must be
+independently verified.
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
