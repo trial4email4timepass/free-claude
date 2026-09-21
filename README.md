@@ -513,3 +513,106 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## GitHub Tools & Projects Resource (reference note, not vendored)
+
+A curated list of notable projects from four GitHub developers —
+[grqz](https://github.com/grqz), [WitherOrNot](https://github.com/WitherOrNot),
+[yuliskov](https://github.com/yuliskov), and [stevietv](https://github.com/stevietv)
+— kept here as reference reading, not as vendored Claude Code skills/plugins:
+none of these repos ship a `.claude-plugin/` manifest or `SKILL.md`, so
+there's nothing to install into `.claude/`. They're worth knowing about for
+the engineering problems they solve (media/extraction tooling, TLS
+fingerprinting, Windows internals reverse engineering, Android TV apps, and
+production-scale .NET software).
+
+### grqz — low-level web & media tooling
+
+A contributor/maintainer in the `yt-dlp` ecosystem (listed as a triage
+maintainer on `yt-dlp` itself), focused on YouTube extraction, JS challenge
+handling, Apple WebKit, and TLS behavior.
+
+- **[yt-dlp-apple-webkit-jsi](https://github.com/grqz/yt-dlp-apple-webkit-jsi)**
+  — a `yt-dlp` plugin that uses Apple's WebKit framework as a JavaScript
+  challenge provider for YouTube extraction on modern Apple devices. Good
+  example of solving a narrow compatibility problem by bridging a
+  media-downloading tool with a platform-native browser engine.
+  Python; yt-dlp plugins; Apple WebKit.
+- **[bgutil-ytdlp-pot-provider](https://github.com/grqz/bgutil-ytdlp-pot-provider)**
+  — generates the proof-of-origin tokens YouTube's anti-abuse/request
+  validation requires. Shows how open-source media tooling needs constant
+  protocol research and browser-behavior emulation as the target site
+  changes. Python/JavaScript; yt-dlp; YouTube extraction infra.
+- **[ssl_imp](https://github.com/grqz/ssl_imp)** — a C/OpenSSL project that
+  reproduces Chrome's TLS fingerprint. Useful for studying TLS handshakes
+  and how clients can look different at the network layer even when making
+  similar HTTP requests. C; OpenSSL; CMake; TLS fingerprinting.
+
+### WitherOrNot — Windows internals & reverse engineering
+
+Repos focused on Component-Based Servicing (CBS), licensing mechanisms,
+obfuscation research, and low-level Windows system behavior.
+
+- **[TSforge](https://github.com/massgravel/TSforge)** — activation/
+  evaluation extension methods spanning Windows Vista through 11. A strong
+  example of understanding how a large OS's licensing/evaluation mechanisms
+  work at a low level. C#; Windows internals; licensing research.
+- **[UMSKT](https://github.com/UMSKT/UMSKT)** — an open-source toolkit for
+  researching Microsoft's pre-Vista licensing mechanisms; reverse engineering
+  turned into a reusable tool. C++; reverse engineering; Windows licensing.
+- **[cbs-docs](https://github.com/WitherOrNot/cbs-docs)** — documentation of
+  Windows Component-Based Servicing (architecture, internals, image
+  deployment behavior), valuable where official docs are thin and the
+  authors relied on reverse engineering.
+- **[cbsexploder](https://github.com/WitherOrNot/cbsexploder)** — a CBS
+  client for offline Windows servicing (stage/install/uninstall/enumerate
+  packages in an offline image); turns that reverse-engineering knowledge
+  into an actual systems tool. C#; Windows servicing; offline images.
+
+### yuliskov — Android TV & media software
+
+Long-running work on Android TV apps and media experiences.
+
+- **[SmartTube](https://github.com/yuliskov/SmartTube)** — the standout
+  entry: a free, open-source media client for Android TVs/TV boxes with
+  SponsorBlock integration, adjustable playback speed, 8K/60fps/HDR
+  playback, live chat, customizable controls, and no dependency on Google
+  Services. A large user-facing app combining media playback, TV UX,
+  networking, device compatibility, and a substantial community.
+  Java/Kotlin; Android TV; Retrofit/RxJava.
+- **[LeanKeyboard](https://github.com/yuliskov/LeanKeyboard)** — a keyboard
+  built for Android TVs/set-top boxes: remote-controller support, multiple
+  languages, no Google Services or root required. Solves the deceptively
+  hard problem of text input on a TV via remote. Java; Android TV; input
+  methods.
+- **[SmartTubeLegacy](https://github.com/yuliskov/SmartTubeLegacy)** — the
+  archived predecessor of SmartTube; useful for seeing how a long-running
+  open-source project evolves into a larger successor. JavaScript; Android
+  TV; media.
+
+### stevietv — C#/.NET & open-source contributions
+
+A broad profile (100+ repos) centered on C#, JavaScript, SQL, React, and
+TypeScript. Since most of the profile is contributions rather than
+from-scratch projects, the most useful approach is exploring the profile
+for where meaningful contributions were made rather than assuming sole
+authorship.
+
+- **[Sonarr](https://github.com/Sonarr/Sonarr)** — a smart PVR-style app
+  for automatically managing/downloading TV series from supported sources.
+  A mature, production-scale open-source app showing how backend
+  automation, scheduling, metadata, media management, and a web UI come
+  together in one product. C#/.NET; automation; media management.
+
+### What these teach
+
+Media tooling (handling changing websites/extraction challenges), networking
+(TLS fingerprints below the HTTP layer), reverse engineering (documenting
+undocumented OS internals), systems engineering (turning low-level findings
+into practical tools), Android TV design (remote-control-constrained UX),
+and open-source product evolution (personal tool → ecosystem). Mature
+projects like these are generally more instructive than small tutorial repos
+because they expose real engineering trade-offs.
+
+Repo names, technologies, and capabilities can drift as these projects
+change — recheck before relying on any of it.
