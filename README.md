@@ -1,6 +1,8 @@
-# DeerFlow — Repo Overview
+# free-claude
 
-Notes on [bytedance/deer-flow](https://github.com/bytedance/deer-flow), based on its GitHub repository page and README.
+## Installed skills
+
+- **create-plan** (`.claude/skills/create-plan/`) — turns a coding request into a single, read-only, actionable plan. Ported from [openai/skills](https://github.com/openai/skills)'s `skills/.experimental/create-plan` (as of commit `a511969`, the last commit before it was removed upstream in [`ea6b206`](https://github.com/openai/skills/commit/ea6b206c683087da5b503f5ac9d7202b326ac6bb)). Licensed under Apache License 2.0; see `.claude/skills/create-plan/LICENSE.txt`.
 
 ## What it is
 
@@ -114,6 +116,46 @@ directory](https://github.com/obra/superpowers/tree/main/skills).
 (Apache 2.0, `LICENSE.txt` included) — guidance for distinctive, intentional
 visual design when building or reshaping a UI, so Claude Code reaches for it
 on frontend/design work instead of defaulting to templated layouts.
+
+## Eleven domain agents (adapted from a LangGraph prompt library)
+
+`.claude/agents/eleven-agents-*.md` — 11 Claude Code subagents, one per file,
+adapted from the *"Eleven AI Agents for Beginners to Advance Level
+Developers"* prompt library (an uploaded archive of `guide/agents/*.md`
+LangGraph specs; no upstream repo URL or license file was included with the
+source archive, so treat provenance as informal). Each source spec is an
+11-section, framework-specific design (state schema, LangGraph node/edge
+graph, per-node prompts, `Send`/`interrupt` mechanics) for a *separate*
+Python/LangGraph application — none of that is runnable here. What's ported
+is each agent's **persona, objective, workflow, and guardrails**, rewritten
+as a single-pass Claude Code subagent system prompt that uses this repo's
+own tools (`Bash`, `Read`, `Grep`, `Glob`, `Edit`/`Write`, `WebFetch`) in
+place of the original's custom Python tools:
+
+| Agent | File | Domain |
+|---|---|---|
+| SQL Data Analyst | `eleven-agents-sql-data-analyst.md` | Read-only SQL Q&A with self-correction |
+| CSV/Excel Data Analyst | `eleven-agents-csv-excel-data-analyst.md` | pandas-based spreadsheet analysis |
+| BI Dashboard Insights | `eleven-agents-bi-dashboard-insights.md` | Metric-movement driver analysis |
+| Customer Support | `eleven-agents-customer-support.md` | Intent routing + grounded replies |
+| HR Resume Screener | `eleven-agents-hr-resume-screener.md` | Bias-free rubric scoring + shortlist |
+| Finance Expense Auditor | `eleven-agents-finance-expense-auditor.md` | Policy checks + human review gate |
+| Marketing Content | `eleven-agents-marketing-content.md` | Write → critique → revise loop |
+| Legal Document Reviewer | `eleven-agents-legal-document-reviewer.md` | Citation-anchored contract review |
+| Healthcare Intake | `eleven-agents-healthcare-intake.md` | Guarded intake + emergency escalation |
+| DevOps Incident Triage | `eleven-agents-devops-incident-triage.md` | Evidence-cited triage, propose-not-execute |
+| E-commerce Recommender | `eleven-agents-ecommerce-recommender.md` | Recommendations + file-based cross-session memory |
+
+Two adaptation notes worth knowing if you compare against the source specs:
+
+- Patterns that relied on LangGraph's `interrupt()`/human-in-the-loop
+  (finance auditor, devops triage) become "propose, never execute" agents:
+  they always stop short of any write action and hand a clearly-labelled
+  proposal back for a human to act on, rather than pausing a live graph.
+- The e-commerce recommender's LangGraph cross-thread `Store` becomes an
+  optional shopper-profile file the agent reads/writes with `Edit`/`Write`,
+  so preferences still persist across sessions without a separate memory
+  service.
 
 ## Additional anthropics/skills vendored
 
@@ -531,6 +573,45 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## awesome-claude-skills roundup
+
+The same `.claude-plugin/marketplace.json` also carries eight entries added
+from a separate "AWESOME-CLAUDE-SKILLS: 12 must-have Claude skills" roundup
+graphic (a hand-picked list, not the trending-claude-skills leaderboard
+above). Same caveat as above: these are unvendored, unaudited pointers at
+external repos — read the source before installing.
+
+Four of the twelve skills in that roundup are already covered elsewhere in
+this repo rather than duplicated in the marketplace:
+
+- **Superpowers** — the whole framework is vendored under `.claude/skills/`
+  (see the "Superpowers skills framework" section above), not just listed.
+- **Brainstorming** and **TDD** (`test-driven-development`) — both ship as
+  part of that same vendored Superpowers skill set.
+- **UI/UX Pro Max** — fully vendored under `.claude/skills/ui-ux-pro-max/`
+  and friends (see the "ui-ux-pro-max-skill (full vendor)" section above),
+  not just listed.
+
+The remaining eight were added as marketplace entries:
+
+| Skill | Source repo |
+|---|---|
+| Matt Pocock Skills | [`mattpocock/skills`](https://github.com/mattpocock/skills) |
+| Caveman | [`Shawnchee/caveman-skill`](https://github.com/Shawnchee/caveman-skill) |
+| Humanizer | [`blader/humanizer`](https://github.com/blader/humanizer) |
+| Find Skills | [`vercel-labs/skills`](https://github.com/vercel-labs/skills/tree/main/skills/find-skills) (`skills/find-skills`) |
+| Deploy to Vercel | [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills/tree/main/skills/deploy-to-vercel) (`skills/deploy-to-vercel`) |
+| Excalidraw | [`coleam00/excalidraw-diagram-skill`](https://github.com/coleam00/excalidraw-diagram-skill) |
+| Remotion | [`remotion-dev/skills`](https://github.com/remotion-dev/skills) |
+| Web Quality | [`addyosmani/web-quality-skills`](https://github.com/addyosmani/web-quality-skills) |
+
+Install any of them the same way as the trending-list entries:
+
+```
+/plugin marketplace add trial4email4timepass/free-claude
+/plugin install <plugin-name>@free-claude
+```
 
 ## GitHub Tools & Projects Resource (reference note, not vendored)
 
