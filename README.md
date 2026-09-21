@@ -616,3 +616,53 @@ because they expose real engineering trade-offs.
 
 Repo names, technologies, and capabilities can drift as these projects
 change — recheck before relying on any of it.
+
+## CLI-Anything (reference note, not vendored)
+
+[HKUDS/CLI-Anything](https://github.com/HKUDS/CLI-Anything) (Apache-2.0) is
+"Making ALL Software Agent-Native" — a harness that turns GUI/desktop
+software into agent-friendly CLIs, plus a growing community registry of
+CLIs already built that way. Unlike the DeerFlow/Octop/OpenManus notes
+above, it *does* ship genuine Claude Code plugin/skill content — but like
+the OpenDesign note above, that content is best installed live rather than
+copied in here, so it's documented as reference rather than vendored.
+
+Two independent tracks:
+
+- **Use an existing CLI (`cli-hub`)** — `pip install cli-anything-hub` gives
+  a `cli-hub` command (`list` / `search` / `info` / `install` / `update` /
+  `uninstall` / `launch`) that installs ready-made harnesses for ~70
+  applications from its registry (Blender, GIMP, FreeCAD, Krita, Obsidian,
+  Zotero, LibreOffice, Godot, Audacity, Zoom, n8n, and many more) — some
+  wrap real desktop apps that must also be installed locally. A companion
+  `cli-hub-meta-skill` (`npx skills add HKUDS/CLI-Anything --skill
+  cli-hub-meta-skill -g -y`) lets a SKILL-compatible agent discover and
+  install the right one autonomously.
+- **Build a new CLI (the `cli-anything` plugin)** — a Claude Code plugin
+  (`.claude-plugin/marketplace.json` → `cli-anything-plugin/`) that runs a
+  7-phase generator (analyze → design → implement → plan tests → write
+  tests → document → publish) turning a local app or repo into a Click-based
+  CLI with REPL, JSON output, and undo/redo, via `/cli-anything <path>` (plus
+  `/cli-anything:refine` for incremental gap-filling). Supports Claude Code,
+  Cursor, Pi, OpenClaw, OpenCode, Codex, Hermes, Reasonix, Qodercli, and
+  GitHub Copilot CLI.
+
+Why it's referenced rather than vendored: the repo-root `skills/` directory
+holds ~70 `SKILL.md` harness skills (one per supported application, e.g.
+`skills/cli-anything-blender/SKILL.md`), each meant to be pulled in
+individually via `npx skills add HKUDS/CLI-Anything --skill <id> -g -y` as
+needed — vendoring all of them (or guessing a useful subset) would work
+against that design. The `cli-anything` builder plugin is likewise meant to
+be installed live so it always matches the current 7-phase harness/guides
+content, not frozen at whatever commit this note was written against.
+
+```bash
+# Use an existing harness
+pip install cli-anything-hub
+cli-hub search blender && cli-hub install blender && cli-hub launch blender
+
+# Add the CLI generator plugin (Claude Code)
+/plugin marketplace add HKUDS/CLI-Anything
+/plugin install cli-anything
+/cli-anything ./path-to-app-or-repo
+```
