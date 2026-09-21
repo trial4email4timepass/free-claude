@@ -277,3 +277,40 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## awesome-claude-skills roundup
+
+The same `.claude-plugin/marketplace.json` also carries nine entries added
+from a separate "AWESOME-CLAUDE-SKILLS: 12 must-have Claude skills" roundup
+graphic (a hand-picked list, not the trending-claude-skills leaderboard
+above). Same caveat as above: these are unvendored, unaudited pointers at
+external repos — read the source before installing.
+
+Three of the twelve skills in that roundup are already covered elsewhere in
+this repo rather than duplicated in the marketplace:
+
+- **Superpowers** — the whole framework is vendored under `.claude/skills/`
+  (see the "Superpowers skills framework" section above), not just listed.
+- **Brainstorming** and **TDD** (`test-driven-development`) — both ship as
+  part of that same vendored Superpowers skill set.
+
+The remaining nine were added as marketplace entries:
+
+| Skill | Source repo |
+|---|---|
+| Matt Pocock Skills | [`mattpocock/skills`](https://github.com/mattpocock/skills) |
+| UI/UX Pro Max | [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
+| Caveman | [`Shawnchee/caveman-skill`](https://github.com/Shawnchee/caveman-skill) |
+| Humanizer | [`blader/humanizer`](https://github.com/blader/humanizer) |
+| Find Skills | [`vercel-labs/skills`](https://github.com/vercel-labs/skills/tree/main/skills/find-skills) (`skills/find-skills`) |
+| Deploy to Vercel | [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills/tree/main/skills/deploy-to-vercel) (`skills/deploy-to-vercel`) |
+| Excalidraw | [`coleam00/excalidraw-diagram-skill`](https://github.com/coleam00/excalidraw-diagram-skill) |
+| Remotion | [`remotion-dev/skills`](https://github.com/remotion-dev/skills) |
+| Web Quality | [`addyosmani/web-quality-skills`](https://github.com/addyosmani/web-quality-skills) |
+
+Install any of them the same way as the trending-list entries:
+
+```
+/plugin marketplace add trial4email4timepass/free-claude
+/plugin install <plugin-name>@free-claude
+```
