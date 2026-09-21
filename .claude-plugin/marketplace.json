@@ -59,7 +59,6 @@
     { "name": "e2e-tester", "source": { "source": "github", "repo": "close-shellflower7762/e2e-tester" }, "description": "Automate E2E Playwright tests and Lighthouse audits via a slash command." },
 
     { "name": "mattpocock-skills", "source": { "source": "github", "repo": "mattpocock/skills" }, "description": "Matt Pocock's own agent skills - 'skills for real engineers, straight from my .agents directory' - addressing misalignment, verbosity, code quality, and architectural drift." },
-    { "name": "ui-ux-pro-max", "source": { "source": "github", "repo": "nextlevelbuilder/ui-ux-pro-max-skill" }, "description": "Design-intelligence skill with 79 searchable UI styles, 192 industry-specific reasoning rules, and design-system generation across 22 tech stacks." },
     { "name": "caveman-skill", "source": { "source": "github", "repo": "Shawnchee/caveman-skill" }, "description": "Cuts AI coding-assistant verbosity and filler narration for roughly 61% token savings on standard tasks." },
     { "name": "humanizer", "source": { "source": "github", "repo": "blader/humanizer" }, "description": "Rewrites AI-generated text to remove signs of AI authorship (25 identified patterns) while preserving original meaning." },
     { "name": "vercel-find-skills", "source": { "source": "github", "repo": "vercel-labs/skills" }, "description": "Vercel Labs skill for discovering and installing other agent skills from the open skills ecosystem; lives at skills/find-skills in this monorepo." },
