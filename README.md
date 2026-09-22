@@ -277,3 +277,45 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## Cua computer-use skills (trycua/cua)
+
+Two skills vendored from [trycua/cua](https://github.com/trycua/cua) (MIT,
+`.claude/THIRD_PARTY_NOTICE_cua_LICENSE`; a copy also sits in each skill
+dir), snapshot of upstream commit `681bc44`:
+
+- **`cua-driver`** (`.claude/skills/cua-driver/`, from
+  `libs/cua-driver/rust/Skills/cua-driver/`, skill v0.28.2) — drive native
+  macOS/Windows/Linux GUI apps through the `cua-driver` CLI or MCP server:
+  accessibility-tree snapshots, element tokens, verify-after-act. Platform
+  and browser/recording/embedding guides load on demand.
+- **`gui-automation`** (`.claude/skills/gui-automation/`, from `skills/`) —
+  screenshot → click/type → verify loops via the `cua` Python CLI
+  (`pip install cua`) against cloud VMs, Docker, Lume, or the local host.
+
+Upstream's `jev-use` skill was left out: it's a recipe for the
+`libs/cua-driver/examples/jev-use/` code inside the cua repo and has
+nothing to run here.
+
+These skills only *describe* the tools; the binaries aren't installed by
+this repo. To actually use them on your machine:
+
+```bash
+# Cua Driver (macOS / Linux) — read the script before piping it to bash
+/bin/bash -c "$(curl -fsSL https://cua.ai/driver/install.sh)"
+claude mcp add --transport stdio cua-driver -- cua-driver mcp
+# or: cua-driver mcp-config --client claude   (prints an absolute-path command)
+
+# cua CLI for gui-automation
+pip install cua
+```
+
+The `cua-driver` MCP server is intentionally **not** added to the root
+`.mcp.json`: it needs a locally installed binary (plus Accessibility /
+Screen Recording permission on macOS), so it would fail to start in any
+session — including cloud ones — that doesn't have it.
+
+Heads-up: `gui-automation` tells the agent to run `cua trajectory share`
+at the end of every session, which uploads the recorded screenshots/actions
+to cua.ai and returns a public link. Skip that step (or use
+`cua do --no-record`) when the screen shows anything private.
