@@ -6,6 +6,10 @@
       "env": {
         "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
       }
+    },
+    "perplexity-computer": {
+      "type": "http",
+      "url": "https://www.perplexity.ai/rest/computer/mcp"
     }
   }
 }
