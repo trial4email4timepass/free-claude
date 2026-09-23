@@ -4,7 +4,7 @@
   "owner": {
     "name": "trial4email4timepass"
   },
-  "description": "Aggregated marketplace of skills/agent repos surfaced by the linny006/trending-claude-skills leaderboard. Entries point at their original external repos and are NOT vendored or reviewed here — see README.md before installing anything.",
+  "description": "Aggregated marketplace of skills/agent repos surfaced by the linny006/trending-claude-skills leaderboard, plus a hand-picked batch from an 'awesome-claude-skills' roundup graphic. Entries point at their original external repos and are NOT vendored or reviewed here — see README.md before installing anything.",
   "version": "0.1.0",
   "plugins": [
     { "name": "gtm-eng-skills", "source": { "source": "github", "repo": "getaero-io/gtm-eng-skills" }, "description": "10 AI agent skills for Claude Code - waterfall email enrichment, TAM building, signal discovery, job change detection, and more." },
@@ -57,6 +57,14 @@
     { "name": "grant-thinking-skill", "source": { "source": "github", "repo": "Ikramahmadmemon13/grant-thinking-skill" }, "description": "Evaluate project fundability and refine grant logic." },
     { "name": "bigquery-expert", "source": { "source": "github", "repo": "Ocean1346/bigquery-expert" }, "description": "Generate SQL, optimize costs, design schemas, detect anomalies in BigQuery." },
     { "name": "e2e-tester", "source": { "source": "github", "repo": "close-shellflower7762/e2e-tester" }, "description": "Automate E2E Playwright tests and Lighthouse audits via a slash command." },
+    { "name": "mattpocock-skills", "source": { "source": "github", "repo": "mattpocock/skills" }, "description": "Matt Pocock's own agent skills - 'skills for real engineers, straight from my .agents directory' - addressing misalignment, verbosity, code quality, and architectural drift." },
+    { "name": "caveman-skill", "source": { "source": "github", "repo": "Shawnchee/caveman-skill" }, "description": "Cuts AI coding-assistant verbosity and filler narration for roughly 61% token savings on standard tasks." },
+    { "name": "humanizer", "source": { "source": "github", "repo": "blader/humanizer" }, "description": "Rewrites AI-generated text to remove signs of AI authorship (25 identified patterns) while preserving original meaning." },
+    { "name": "vercel-find-skills", "source": { "source": "github", "repo": "vercel-labs/skills" }, "description": "Vercel Labs skill for discovering and installing other agent skills from the open skills ecosystem; lives at skills/find-skills in this monorepo." },
+    { "name": "deploy-to-vercel", "source": { "source": "github", "repo": "vercel-labs/agent-skills" }, "description": "Vercel Labs skill for deploying apps to Vercel via git push, the Vercel CLI, or a no-auth fallback script; lives at skills/deploy-to-vercel in this monorepo." },
+    { "name": "excalidraw-diagram-skill", "source": { "source": "github", "repo": "coleam00/excalidraw-diagram-skill" }, "description": "Gives coding agents the ability to generate beautiful, concept-mapped Excalidraw diagrams instead of generic card layouts." },
+    { "name": "remotion-skills", "source": { "source": "github", "repo": "remotion-dev/skills" }, "description": "Remotion's own maintained list of Agent Skills for best practices when building programmatic videos with Remotion/React." },
+    { "name": "web-quality-skills", "source": { "source": "github", "repo": "addyosmani/web-quality-skills" }, "description": "Measurement-first agent skills for optimizing performance, accessibility, SEO, and best practices via Lighthouse and Core Web Vitals." },
     { "name": "opencreator", "source": { "source": "github", "repo": "krillinai/OpenCreator" }, "description": "Open-source AI creator workspace (formerly KrillinAI) built on Codex CLI, with bundled video/subtitle/TTS/render Skills in its skills/ directory for video translation, dubbing, thumbnails, and stick-figure animation." }
   ]
 }
