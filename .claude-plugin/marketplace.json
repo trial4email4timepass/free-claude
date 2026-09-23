@@ -56,6 +56,7 @@
     { "name": "scientific-thinking-general", "source": { "source": "github", "repo": "felipedeso7za4444/scientific-thinking-general" }, "description": "Structured scientific reasoning to decompose questions and verify claim provenance." },
     { "name": "grant-thinking-skill", "source": { "source": "github", "repo": "Ikramahmadmemon13/grant-thinking-skill" }, "description": "Evaluate project fundability and refine grant logic." },
     { "name": "bigquery-expert", "source": { "source": "github", "repo": "Ocean1346/bigquery-expert" }, "description": "Generate SQL, optimize costs, design schemas, detect anomalies in BigQuery." },
-    { "name": "e2e-tester", "source": { "source": "github", "repo": "close-shellflower7762/e2e-tester" }, "description": "Automate E2E Playwright tests and Lighthouse audits via a slash command." }
+    { "name": "e2e-tester", "source": { "source": "github", "repo": "close-shellflower7762/e2e-tester" }, "description": "Automate E2E Playwright tests and Lighthouse audits via a slash command." },
+    { "name": "opencreator", "source": { "source": "github", "repo": "krillinai/OpenCreator" }, "description": "Open-source AI creator workspace (formerly KrillinAI) built on Codex CLI, with bundled video/subtitle/TTS/render Skills in its skills/ directory for video translation, dubbing, thumbnails, and stick-figure animation." }
   ]
 }
