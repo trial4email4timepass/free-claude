@@ -1,6 +1,146 @@
 # free-claude
 
-## Installed skills
+## Skills index
+
+All 71 skills currently installed under `.claude/skills/` (vendored + authored). See the detailed sections below for provenance, licenses, and what's wired up vs. reference-only.
+
+1. **access** — Manage Discord channel access — approve pairings, edit allowlists, set DM/group policy.
+2. **advisor-orchestrator-worker** — Use when a task is too large for one model pass, needs parallel research or generation across many subtasks (like researching a dozen competitors a...
+3. **agent-development** — This skill should be used when the user asks to "create an agent", "add an agent", "write a subagent", "agent frontmatter", "when to use descriptio...
+4. **banner-design** — Design banners for social media, ads, website heroes, creative assets, and print.
+5. **brainstorming** — You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior.
+6. **brand** — Brand voice, visual identity, messaging frameworks, asset management, brand consistency.
+7. **build-mcp-app** — This skill should be used when the user wants to build an "MCP app", add "interactive UI" or "widgets" to an MCP server, "render components in chat...
+8. **build-mcp-server** — This skill should be used when the user asks to "build an MCP server", "create an MCP", "make an MCP integration", "wrap an API for Claude", "expos...
+9. **build-mcpb** — This skill should be used when the user wants to "package an MCP server", "bundle an MCP", "make an MCPB", "ship a local MCP server", "distribute a...
+10. **cardputer-buddy** — Iterate on the Cardputer-Adv MicroPython app bundle (Claude Buddy, Snake, Hello) after the device is already provisioned via m5-onboard.
+11. **claude-api** — Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration.
+12. **claude-automation-recommender** — Analyze a codebase and recommend Claude Code automations (hooks, subagents, skills, plugins, MCP servers).
+13. **claude-md-improver** — Audit and improve CLAUDE.md files in repositories.
+14. **claude-security** — The Claude Security menu — pick a job: scan the codebase (the whole repository or a scoped part of it), scan changes (this branch's or a pull reque...
+15. **command-development** — This skill should be used when the user asks to "create a slash command", "add a command", "write a custom command", "define command arguments", "u...
+16. **commit-archaeologist** — Reconstructs why code exists from local git history, including the introducing commit, later changes, current authors, repeated companion files, an...
+17. **configure** — Set up the Discord channel — save the bot token and review access policy.
+18. **create-plan** — Create a concise plan.
+19. **dependency-doctor** — Checks requirements.txt, pyproject.toml, and package.json dependency manifests for surface-level direct-dependency footguns: standard-library shado...
+20. **design** — Comprehensive design skill: brand identity, design tokens, UI styling, logo generation (55 styles, Gemini, Atlas Cloud, or MuAPI AI), corporate ide...
+21. **design-system** — Token architecture, component specifications, and slide generation.
+22. **dispatching-parallel-agents** — Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies
+23. **example-command** — An example user-invoked skill that demonstrates frontmatter options and the skills/<name>/SKILL.md layout
+24. **example-skill** — This skill should be used when the user asks to "demonstrate skills", "show skill format", "create a skill template", or discusses skill developmen...
+25. **executing-plans** — Use when you have a written implementation plan to execute in a separate session with review checkpoints
+26. **finishing-a-development-branch** — Use when implementation is complete, all tests pass, and you need to decide how to integrate the work
+27. **first-reader** — Beta readers for any draft, run by simulating how a real reader experiences it, moment by moment.
+28. **frontend-design** — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one.
+29. **hook-development** — This skill should be used when the user asks to "create a hook", "add a PreToolUse/PostToolUse/Stop hook", "validate tool use", "implement prompt-b...
+30. **imessage-access** — Manage iMessage channel access — approve pairings, edit allowlists, set DM/group policy.
+31. **imessage-configure** — Check iMessage channel setup and review access policy.
+32. **jev-ultrafast** — Drive a fast, natural-language browser agent via the jev-ultrafast library (browser-use/jev-ultrafast) — a Chrome-based agent that picks an indexed...
+33. **m5-onboard** — End-to-end onboarding for a freshly-plugged-in M5Stack ESP32 device (Cardputer, Cardputer-Adv, Core, CoreS3, Stick) — detect on USB, flash UIFlow 2...
+34. **math-olympiad** — Solve competition math problems (IMO, Putnam, USAMO, AIME) with adversarial verification that catches the errors self-verification misses.
+35. **mcp-builder** — Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools.
+36. **mcp-integration** — This skill should be used when the user asks to "add MCP server", "integrate MCP", "configure MCP in plugin", "use .mcp.json", "set up Model Contex...
+37. **perplexity-search** — Use Perplexity AI's search API (via the `perplexity` MCP server) to answer questions that need current, cited, real-world information — news, price...
+38. **playground** — Creates interactive HTML playgrounds — self-contained single-file explorers that let users configure something visually through controls, see a liv...
+39. **plugin-settings** — This skill should be used when the user asks about "plugin settings", "store plugin configuration", "user-configurable plugin", ".local.md files", ...
+40. **plugin-structure** — This skill should be used when the user asks to "create a plugin", "scaffold a plugin", "understand plugin structure", "organize plugin components"...
+41. **ponytail** — Forces the laziest solution that actually works, simplest, shortest, most minimal.
+42. **ponytail-audit** — Whole-repo audit for over-engineering.
+43. **ponytail-debt** — Harvest every `ponytail:` comment in the codebase into a debt ledger, so the deliberate shortcuts and deferrals ponytail leaves behind get tracked ...
+44. **ponytail-gain** — Show ponytail's measured impact as a compact scoreboard: less code, less cost, more speed, from the benchmark medians.
+45. **ponytail-help** — Quick-reference card for all ponytail modes, skills, and commands.
+46. **ponytail-review** — Code review focused exclusively on over-engineering.
+47. **project-artifact** — Generate and publish a project status artifact — an opinionated, tabbed status page for a project too big for one update (overview & success criter...
+48. **project-graveyard** — Scans the developer's machine for dead side projects, autopsies each one from its git history (died at the payments wall, killed by a newer project...
+49. **receipts** — Generate a personal Claude Code usage & impact report ("receipts") from this machine's local session transcripts — for justifying Claude Code usage...
+50. **receiving-code-review** — Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requir...
+51. **requesting-code-review** — Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+52. **scope-creep-detector** — Analyzes git diffs against a stated intent to detect scope creep, unrelated files, broad pull requests, changes that grew beyond a fix, dependency ...
+53. **session-report** — Generate an explorable HTML report of Claude Code session usage (tokens, cache, subagents, skills, expensive prompts) from ~/.claude/projects trans...
+54. **skill-creator** — Create new skills, modify and improve existing skills, and measure skill performance.
+55. **skill-development** — This skill should be used when the user wants to "create a skill", "add a skill to plugin", "write a new skill", "improve skill description", "orga...
+56. **slides** — Create strategic HTML presentations with Chart.js, design tokens, responsive layouts, copywriting formulas, and contextual slide strategies.
+57. **subagent-driven-development** — Use when executing implementation plans with independent tasks in the current session
+58. **systematic-debugging** — Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
+59. **telegram-access** — Manage Telegram channel access — approve pairings, edit allowlists, set DM/group policy.
+60. **telegram-configure** — Set up the Telegram channel — save the bot token and review access policy.
+61. **test-driven-development** — Use when implementing any feature or bugfix, before writing implementation code
+62. **thinking-out-loud** — A contract for what the agent does when a long, messy, stream-of-consciousness ramble arrives (usually voice dictation): act on nothing until the e...
+63. **ui-styling** — Create beautiful, accessible user interfaces with shadcn/ui components (built on Radix UI + Tailwind), Tailwind CSS utility-first styling, and canv...
+64. **ui-ux-pro-max** — UI/UX design intelligence for web, mobile, and desktop.
+65. **using-git-worktrees** — Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace...
+66. **using-superpowers** — Use when starting any conversation - establishes how to find and use skills, requiring skill invocation before ANY response including clarifying qu...
+67. **verification-before-completion** — Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirm...
+68. **webapp-testing** — Toolkit for interacting with and testing local web applications using Playwright.
+69. **writing-plans** — Use when you have a spec or requirements for a multi-step task, before touching code
+70. **writing-rules** — This skill should be used when the user asks to "create a hookify rule", "write a hook rule", "configure hookify", "add a hookify rule", or needs g...
+71. **writing-skills** — Use when creating new skills, editing existing skills, or verifying skills work before deployment
+
+## Plugins index
+
+All 59 entries currently in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) — unvendored pointers at external repos (see the "trending-claude-skills marketplace" and "awesome-claude-skills roundup" sections below before installing any of them).
+
+1. **gtm-eng-skills** ([`getaero-io/gtm-eng-skills`](https://github.com/getaero-io/gtm-eng-skills)) — 10 AI agent skills for Claude Code - waterfall email enrichment, TAM building, signal discovery, job change detection, and more.
+2. **dotdesign** ([`shumatsumonobu/dotdesign`](https://github.com/shumatsumonobu/dotdesign)) — Design discipline skills for Claude Code - Apple-grade rules your agent can count on.
+3. **xuanxue-skills** ([`konglong87/xuanxue-skills`](https://github.com/konglong87/xuanxue-skills)) — Chinese traditional metaphysics skill pack (fortune-telling, feng shui, etc.) - for entertainment only.
+4. **wilbeibi-skills** ([`wilbeibi/wilbeibi-skills`](https://github.com/wilbeibi/wilbeibi-skills)) — 16 agent skills for Claude Code and Codex - code review, test writing, docs, planning, codebase onboarding, repo evaluation.
+5. **preset-agent-skills** ([`preset-io/agent-skills`](https://github.com/preset-io/agent-skills)) — Agent skills for Preset, Apache Superset, Superset MCP & Snowflake Cortex - works across Claude, Codex, Cursor, Copilot.
+6. **trending-claude-skills** ([`linny006/trending-claude-skills`](https://github.com/linny006/trending-claude-skills)) — The auto-updated leaderboard this marketplace was generated from (tracker script, not itself a skill).
+7. **claude-marketplace** ([`RealDougEubanks/ClaudeMarketplace`](https://github.com/RealDougEubanks/ClaudeMarketplace)) — A community-driven collection of custom skills for Claude Code.
+8. **oh-my-openagent** ([`code-yeongyu/oh-my-openagent`](https://github.com/code-yeongyu/oh-my-openagent)) — OmO agent-graph engineering toolkit for Claude Code.
+9. **saas-marketing-agents** ([`shalintripathi/saas-marketing-agents`](https://github.com/shalintripathi/saas-marketing-agents)) — AI marketing team for B2B SaaS: agents + Claude Code skills for SEO/AEO/GEO, content, paid media, email.
+10. **api-claws** ([`buda-ai/api-claws`](https://github.com/buda-ai/api-claws)) — Agent harness on Buda API Claws - a skill plus a TypeScript quickstart for device/API agent access.
+11. **fabricioctelles-skills** ([`fabricioctelles/skills`](https://github.com/fabricioctelles/skills)) — A collection of skills for AI agents (Kiro, Cursor, Windsurf, Claude Code, and others).
+12. **claude-certified-architect-foundations** ([`techmahato-com/ClaudeCertifiedArchitectFoundations`](https://github.com/techmahato-com/ClaudeCertifiedArchitectFoundations)) — Study notes and exercises for a Claude Certified Architect-style certification.
+13. **agent-skills-best-practice** ([`timwukp/agent-skills-best-practice`](https://github.com/timwukp/agent-skills-best-practice)) — 35 portable agent skills (Agent Skills spec) for Kiro & Claude Code: Scrum/DevSecOps roles, compliance.
+14. **pdlc-forge** ([`24bsc244-svg/pdlc-forge`](https://github.com/24bsc244-svg/pdlc-forge)) — 31 hard-contract PDLC commands for GitOps workflows.
+15. **idd-skill** ([`kurone-kito/idd-skill`](https://github.com/kurone-kito/idd-skill)) — Automated setup kit for loop-engineering based issue-driven development.
+16. **prompt-to-pattern-design** ([`consolascionw/prompt-to-pattern-design`](https://github.com/consolascionw/prompt-to-pattern-design)) — AI-powered AST context engine for outline-driven code generation.
+17. **skill-vault** ([`lobisomenhomemafeminado/skill-vault`](https://github.com/lobisomenhomemafeminado/skill-vault)) — AI skill finder - automated search & install for Claude Code skills.
+18. **gaia** ([`gaia-react/gaia`](https://github.com/gaia-react/gaia)) — Claude-native foundation for building a full app; React frontend plus backend scaffolding.
+19. **suede-creator-skills** ([`JasonColapietro/suede-creator-skills`](https://github.com/JasonColapietro/suede-creator-skills)) — 74 open-source Agent Skills for Claude Code and Codex: AI SEO/AEO/GEO, code review, CI gates.
+20. **polaris** ([`HsuanYuLee/polaris`](https://github.com/HsuanYuLee/polaris)) — Claude Code workspace template with AI skills for JIRA, PRs, code review, estimation, standups.
+21. **clio** ([`nhhthong/clio`](https://github.com/nhhthong/clio)) — Project-memory kit for .claude/: layout, ledgers, and the loop that keeps them true.
+22. **haive** ([`martinambrus/haive`](https://github.com/martinambrus/haive)) — Project orchestration and AI agentic workflow utility.
+23. **preflight-checklist** ([`saumit2401273106-lab/preflight-checklist`](https://github.com/saumit2401273106-lab/preflight-checklist)) — Documentation + PoC stress test toolkit for SREs.
+24. **hermes-skills** ([`jiawood2006/hermes-skills`](https://github.com/jiawood2006/hermes-skills)) — Video-to-text, AI text de-humanizer, OCR, e-commerce material studio skills.
+25. **wonder-pill** ([`maravil5768/Wonder-Pill`](https://github.com/maravil5768/Wonder-Pill)) — Turns confusing questions into interactive mind maps with Claude.
+26. **insert-any-3d** ([`sexya3624/InsertAny3D`](https://github.com/sexya3624/InsertAny3D)) — Insert 3D objects into Unity scenes via multi-view geometric alignment and Gaussian Splatting assets.
+27. **ronnier-skill** ([`Joshuadoroja33/Ronnier-skill`](https://github.com/Joshuadoroja33/Ronnier-skill)) — Learn color science in Chinese - notes, formulas, and Q&A.
+28. **appllama-skills** ([`pianoteachervandegraaffgenerator47/appllama-skills`](https://github.com/pianoteachervandegraaffgenerator47/appllama-skills)) — Skills for building mobile apps, simulator-verified against top-grossing apps.
+29. **evidence-based-copywriting** ([`mucinous-riposte867/evidence-based-copywriting`](https://github.com/mucinous-riposte867/evidence-based-copywriting)) — Ship verified marketing copy with adversarial checks tracing claims to sources.
+30. **tiktok-video-skill** ([`Trudiemisanthropic314/tiktok-video-skill`](https://github.com/Trudiemisanthropic314/tiktok-video-skill)) — Generate publish-ready TikTok/Douyin vertical videos from a content brief.
+31. **claude-skills-live** ([`Anikaar382/claude-skills-live`](https://github.com/Anikaar382/claude-skills-live)) — Discover, verify, and track Claude Code & Agent Skills tools with automated health checks.
+32. **agent-skills-collection** ([`graceupperclass437/agent-skills-collection`](https://github.com/graceupperclass437/agent-skills-collection)) — Curated modular agent skills for LLM-based assistants.
+33. **mirai-scientific-calculator** ([`Cataclysmic-faircopy193/mirai-scientific-calculator`](https://github.com/Cataclysmic-faircopy193/mirai-scientific-calculator)) — Open-source scientific calculator/graphing/statistics tool.
+34. **unifi-map** ([`Josiecontrolling326/unifi-map`](https://github.com/Josiecontrolling326/unifi-map)) — Export UniFi network topologies as zoomable diagrams and draw.io files.
+35. **open-code-review** ([`skeletonshorts029-png/open-code-review`](https://github.com/skeletonshorts029-png/open-code-review)) — Automate code review processes to improve software quality.
+36. **resume-studio** ([`Andreasuar2549/resume-studio`](https://github.com/Andreasuar2549/resume-studio)) — Build career history and generate custom resumes per job application.
+37. **claude-mythos-ai-desktop** ([`Betor4583/Claude-Mythos-AI-Free-desktop`](https://github.com/Betor4583/Claude-Mythos-AI-Free-desktop)) — Native desktop app access to a Claude-branded AI model - unofficial third-party client.
+38. **web-perf-audit** ([`sa746062/web-perf-audit`](https://github.com/sa746062/web-perf-audit)) — Audit web performance with a multi-agent pipeline for Core Web Vitals fixes.
+39. **salesforce-accelerator-patterns** ([`ENTEROPNON/salesforce-accelerator-patterns`](https://github.com/ENTEROPNON/salesforce-accelerator-patterns)) — Salesforce ISV & partner skills catalog - reusable deployment kit.
+40. **agentscamp-library** ([`imtiazrayhan/agentscamp-library`](https://github.com/imtiazrayhan/agentscamp-library)) — Installable library of AI coding agents, skills, commands, guides & tools.
+41. **mem-dreamer** ([`Free-Soul/MemDreamer`](https://github.com/Free-Soul/MemDreamer)) — Understand long videos via hierarchical graph memory and agentic retrieval.
+42. **ea-skill** ([`jzl-maker/EA-SKILL`](https://github.com/jzl-maker/EA-SKILL)) — No description provided upstream.
+43. **claude-sec** ([`Videoa7917/ClaudeSec`](https://github.com/Videoa7917/ClaudeSec)) — Automates security assessments aligned with OWASP Top 10, based on Claude Opus.
+44. **anti-ai-writing** ([`kierstenicy452/anti-ai-writing`](https://github.com/kierstenicy452/anti-ai-writing)) — Removes AI patterns and robotic phrasing from drafts.
+45. **tastemaker** ([`codeswithroh/tastemaker`](https://github.com/codeswithroh/tastemaker)) — Grounds AI-generated UI in reference images and a persistent per-developer taste profile.
+46. **superseo-skills** ([`flakey-caster542/superseo-skills`](https://github.com/flakey-caster542/superseo-skills)) — SEO audits, briefs, and content strategy via production-tested Claude skills.
+47. **scientific-thinking-general** ([`felipedeso7za4444/scientific-thinking-general`](https://github.com/felipedeso7za4444/scientific-thinking-general)) — Structured scientific reasoning to decompose questions and verify claim provenance.
+48. **grant-thinking-skill** ([`Ikramahmadmemon13/grant-thinking-skill`](https://github.com/Ikramahmadmemon13/grant-thinking-skill)) — Evaluate project fundability and refine grant logic.
+49. **bigquery-expert** ([`Ocean1346/bigquery-expert`](https://github.com/Ocean1346/bigquery-expert)) — Generate SQL, optimize costs, design schemas, detect anomalies in BigQuery.
+50. **e2e-tester** ([`close-shellflower7762/e2e-tester`](https://github.com/close-shellflower7762/e2e-tester)) — Automate E2E Playwright tests and Lighthouse audits via a slash command.
+51. **mattpocock-skills** ([`mattpocock/skills`](https://github.com/mattpocock/skills)) — Matt Pocock's own agent skills - 'skills for real engineers, straight from my .agents directory' - addressing misalignment, verbosity, code quality, and architectural drift.
+52. **caveman-skill** ([`Shawnchee/caveman-skill`](https://github.com/Shawnchee/caveman-skill)) — Cuts AI coding-assistant verbosity and filler narration for roughly 61% token savings on standard tasks.
+53. **humanizer** ([`blader/humanizer`](https://github.com/blader/humanizer)) — Rewrites AI-generated text to remove signs of AI authorship (25 identified patterns) while preserving original meaning.
+54. **vercel-find-skills** ([`vercel-labs/skills`](https://github.com/vercel-labs/skills)) — Vercel Labs skill for discovering and installing other agent skills from the open skills ecosystem; lives at skills/find-skills in this monorepo.
+55. **deploy-to-vercel** ([`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills)) — Vercel Labs skill for deploying apps to Vercel via git push, the Vercel CLI, or a no-auth fallback script; lives at skills/deploy-to-vercel in this monorepo.
+56. **excalidraw-diagram-skill** ([`coleam00/excalidraw-diagram-skill`](https://github.com/coleam00/excalidraw-diagram-skill)) — Gives coding agents the ability to generate beautiful, concept-mapped Excalidraw diagrams instead of generic card layouts.
+57. **remotion-skills** ([`remotion-dev/skills`](https://github.com/remotion-dev/skills)) — Remotion's own maintained list of Agent Skills for best practices when building programmatic videos with Remotion/React.
+58. **web-quality-skills** ([`addyosmani/web-quality-skills`](https://github.com/addyosmani/web-quality-skills)) — Measurement-first agent skills for optimizing performance, accessibility, SEO, and best practices via Lighthouse and Core Web Vitals.
+59. **opencreator** ([`krillinai/OpenCreator`](https://github.com/krillinai/OpenCreator)) — Open-source AI creator workspace (formerly KrillinAI) built on Codex CLI, with bundled video/subtitle/TTS/render Skills in its skills/ directory for video translation, dubbing, thumbnails, and stick-figure animation.
+
+## create-plan skill provenance
 
 - **create-plan** (`.claude/skills/create-plan/`) — turns a coding request into a single, read-only, actionable plan. Ported from [openai/skills](https://github.com/openai/skills)'s `skills/.experimental/create-plan` (as of commit `a511969`, the last commit before it was removed upstream in [`ea6b206`](https://github.com/openai/skills/commit/ea6b206c683087da5b503f5ac9d7202b326ac6bb)). Licensed under Apache License 2.0; see `.claude/skills/create-plan/LICENSE.txt`.
 
