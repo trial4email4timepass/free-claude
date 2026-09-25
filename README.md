@@ -4,6 +4,21 @@
 
 - **create-plan** (`.claude/skills/create-plan/`) — turns a coding request into a single, read-only, actionable plan. Ported from [openai/skills](https://github.com/openai/skills)'s `skills/.experimental/create-plan` (as of commit `a511969`, the last commit before it was removed upstream in [`ea6b206`](https://github.com/openai/skills/commit/ea6b206c683087da5b503f5ac9d7202b326ac6bb)). Licensed under Apache License 2.0; see `.claude/skills/create-plan/LICENSE.txt`.
 
+## Vendored external tools
+
+- **google-maps-scraper** (`external/google-maps-scraper/`) — git submodule tracking [gosom/google-maps-scraper](https://github.com/gosom/google-maps-scraper), a Go tool that pulls business listings (name, phone, website, email, reviews, rating) from Google Maps for a given search query. Licensed under the MIT License by Georgios Komninos; see `external/google-maps-scraper/LICENSE`.
+
+  Run it via Docker (see the upstream README for full instructions):
+
+  ```bash
+  mkdir -p gmapsdata
+  docker run -v "$PWD/gmapsdata:/gmapsdata" -p 8080:8080 gosom/google-maps-scraper -data-folder /gmapsdata
+  ```
+
+  Since it's a submodule, clone this repo with `git clone --recurse-submodules`, or run `git submodule update --init` afterward, to fetch its contents.
+
+  **Before scraping or contacting anyone with it:** business contact data pulled this way is still personal/commercial data. Check Google's Terms of Service on automated access, and CAN-SPAM/GDPR/local equivalents before emailing or cold-calling scraped contacts — the tool doesn't handle compliance for you.
+
 ## What it is
 
 DeerFlow (**D**eep **E**xploration and **E**fficient **R**esearch **Flow**) is an open-source, long-horizon "super agent" harness. It orchestrates sub-agents, memory, and sandboxes — via tools and extensible skills — to research, code, and create over tasks that can run from minutes to hours.
