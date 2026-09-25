@@ -277,3 +277,21 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## khoj skill
+
+`.claude/skills/khoj/` connects Claude Code to a self-hosted
+[Khoj](https://github.com/khoj-ai/khoj) server (the "AI second brain" that
+indexes your notes/docs). Khoj itself is AGPL-3.0 and is **not** vendored
+here — the skill is original to this repo and just calls Khoj's HTTP API
+(checked against upstream commit `ae229ca`):
+
+- `scripts/khoj.sh search|chat|upload|files|health` — semantic search
+  (`GET /api/search`), grounded Q&A (`POST /api/chat`), add files
+  (`PATCH /api/content`), list indexed files.
+- Configure with `KHOJ_URL` (default `http://localhost:42110`) and
+  `KHOJ_API_KEY` (Khoj web app → Settings → API Keys).
+
+Khoj Cloud (`app.khoj.dev`) has been shut down, so you need to run Khoj
+yourself (`pip install 'khoj[local]'` or upstream's `docker-compose.yml`; see
+<https://docs.khoj.dev/get-started/setup>).
