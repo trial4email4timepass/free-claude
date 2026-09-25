@@ -574,6 +574,35 @@ once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
 
+## Free LLM API directory
+
+[open-free-llm-api/awesome-freellm-apis](https://github.com/open-free-llm-api/awesome-freellm-apis)
+(MIT license; live directory at [freellm.net](https://freellm.net/)) is linked
+here as an external resource — **not vendored**. It's a machine-readable,
+daily-refreshed directory of free-tier LLM APIs (500+ models across 30+
+providers at time of writing — Google Gemini, Groq, NVIDIA NIM, Cloudflare
+Workers AI, Mistral, Hugging Face, OpenRouter, and more), listing each
+provider's base URL, free-tier rate limits, credit-card/registration
+requirements, and ready-to-copy config snippets for tools like Claude Code,
+Cursor, Codex CLI, and Aider.
+
+Relevant to this repo specifically: its Claude Code quick-start config points
+`ANTHROPIC_BASE_URL` at OpenRouter (`https://openrouter.ai/api`) to reach
+models through an Anthropic-compatible endpoint. That's a route to
+*OpenRouter's* free/discounted model catalog, not to Anthropic's own
+Claude models for free — OpenRouter's Anthropic-model routes still require a
+one-time $10 top-up, and using a non-Anthropic `ANTHROPIC_BASE_URL` means
+Claude Code is no longer actually talking to Claude. Treat it as a way to
+point Claude Code's CLI at other free/cheap models, not as free access to
+Claude itself.
+
+As with the trending-claude-skills marketplace above, nothing from that repo
+has been vendored, cloned, or audited here — it's a pointer to an
+actively-maintained, community-run listing. Provider lineups, rate limits,
+and free-tier terms change; treat any specific numbers as a snapshot and
+re-check [freellm.net](https://freellm.net/) or the repo itself before
+relying on them.
+
 ## Cua computer-use skills (trycua/cua)
 
 Two skills vendored from [trycua/cua](https://github.com/trycua/cua) (MIT,
