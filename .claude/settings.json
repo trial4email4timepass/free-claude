@@ -58,6 +58,13 @@
         "source": "github",
         "repo": "AgriciDaniel/claude-seo"
       }
+    },
+    "hindsight": {
+      "source": {
+        "source": "github",
+        "repo": "vectorize-io/hindsight",
+        "ref": "v0.9.2"
+      }
     }
   },
   "enabledPlugins": {
@@ -96,6 +103,7 @@
     "law-student@claude-for-legal": true,
     "legal-clinic@claude-for-legal": true,
     "legal-builder-hub@claude-for-legal": true,
-    "cocounsel-legal@claude-for-legal": true
+    "cocounsel-legal@claude-for-legal": true,
+    "hindsight-memory@hindsight": true
   }
 }
