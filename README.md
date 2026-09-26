@@ -627,7 +627,10 @@ into a different project:
 ```
 
 **gstack** ([garrytan/gstack](https://github.com/garrytan/gstack)) is not a
-plugin. It is a skills bundle with a build step (needs Bun):
+plugin. It is a skills bundle with a build step (needs Bun). In Claude Code
+on the web, `.claude/hooks/session-start.sh` installs it automatically at
+session start (~15-30s cold, skipped once installed; skipped if `bun` is
+missing). Anywhere else, install it by hand:
 
 ```bash
 git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
