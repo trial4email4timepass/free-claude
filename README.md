@@ -601,17 +601,19 @@ into a different project:
 /plugin marketplace add openai/codex-plugin-cc
 /plugin install codex@openai-codex
 
-# financial-services: IB, PE, equity research, wealth (19 plugins, pick the ones you need)
+# financial-services: all 19 plugins are enabled in settings.json
 /plugin marketplace add anthropics/financial-services
 /plugin install financial-analysis@claude-for-financial-services
-/plugin install investment-banking@claude-for-financial-services
-/plugin install equity-research@claude-for-financial-services
-/plugin install private-equity@claude-for-financial-services
+# also: investment-banking, equity-research, private-equity, fund-admin, operations,
+# pitch-agent, market-researcher, earnings-reviewer, meeting-prep-agent, model-builder,
+# gl-reconciler, kyc-screener, valuation-reviewer, month-end-closer, statement-auditor,
+# lseg, sp-global, claude-for-msft-365-install
 
-# claude-for-legal: one plugin per practice area
+# claude-for-legal: all 13 plugins are enabled in settings.json
 /plugin marketplace add anthropics/claude-for-legal
-/plugin install commercial-legal@claude-for-legal   # also: privacy-, product-, corporate-, employment-,
-                                                    # regulatory-, ai-governance-, litigation-, ip-legal
+/plugin install commercial-legal@claude-for-legal
+# also: privacy-, product-, corporate-, employment-, regulatory-, ai-governance-,
+# litigation-, ip-legal, law-student, legal-clinic, legal-builder-hub, cocounsel-legal
 
 # marketingskills
 /plugin marketplace add coreyhaines31/marketingskills
@@ -625,6 +627,11 @@ into a different project:
 /plugin marketplace add AgriciDaniel/claude-seo
 /plugin install claude-seo@agricidaniel-claude-seo
 ```
+
+The `lseg`, `sp-global` and `cocounsel-legal` plugins pull from LSEG,
+S&P Global and Westlaw/Practical Law, so they need an account with that
+provider to return data. `claude-for-msft-365-install` is an admin setup
+tool for the Claude Microsoft 365 add-in, not a day-to-day skill.
 
 **gstack** ([garrytan/gstack](https://github.com/garrytan/gstack)) is not a
 plugin. It is a skills bundle with a build step (needs Bun). In Claude Code

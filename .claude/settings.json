@@ -77,6 +77,25 @@
     "ip-legal@claude-for-legal": true,
     "marketing-skills@marketingskills": true,
     "hyperframes@hyperframes": true,
-    "claude-seo@agricidaniel-claude-seo": true
+    "claude-seo@agricidaniel-claude-seo": true,
+    "fund-admin@claude-for-financial-services": true,
+    "operations@claude-for-financial-services": true,
+    "pitch-agent@claude-for-financial-services": true,
+    "market-researcher@claude-for-financial-services": true,
+    "earnings-reviewer@claude-for-financial-services": true,
+    "meeting-prep-agent@claude-for-financial-services": true,
+    "model-builder@claude-for-financial-services": true,
+    "gl-reconciler@claude-for-financial-services": true,
+    "kyc-screener@claude-for-financial-services": true,
+    "valuation-reviewer@claude-for-financial-services": true,
+    "month-end-closer@claude-for-financial-services": true,
+    "statement-auditor@claude-for-financial-services": true,
+    "lseg@claude-for-financial-services": true,
+    "sp-global@claude-for-financial-services": true,
+    "claude-for-msft-365-install@claude-for-financial-services": true,
+    "law-student@claude-for-legal": true,
+    "legal-clinic@claude-for-legal": true,
+    "legal-builder-hub@claude-for-legal": true,
+    "cocounsel-legal@claude-for-legal": true
   }
 }
