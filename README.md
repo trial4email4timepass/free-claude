@@ -277,3 +277,45 @@ guaranteed to install cleanly as a Claude Code plugin. This list was built
 once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
+
+## Hindsight long-term memory
+
+`.claude/settings.json` registers the [Hindsight](https://github.com/vectorize-io/hindsight)
+marketplace (pinned to tag `v0.9.2`) and enables its official
+`hindsight-memory` plugin (MIT). Claude Code prompts you to install it
+when you trust this project. After that, Claude gets memory that
+persists across sessions:
+
+- **Auto-recall** (`UserPromptSubmit` hook) searches Hindsight for
+  relevant past context before each prompt and adds it to Claude's
+  context without showing it in the transcript.
+- **Auto-retain** (async `Stop` hook) sends the conversation to Hindsight
+  every 10 turns by default. Hindsight extracts decisions, preferences,
+  and project facts from it.
+- **Knowledge tools**: an MCP server provides the `agent_knowledge_*`
+  tools (recall, ingest, knowledge pages). The
+  `/hindsight-memory:create-agent` skill creates subagents that have their
+  own memory.
+
+It needs one of these backends. Without one, the hooks just skip.
+
+```bash
+# A) Local daemon (auto-started via uvx) — needs an LLM key for fact extraction
+export OPENAI_API_KEY=...        # or ANTHROPIC_API_KEY / GEMINI_API_KEY / GROQ_API_KEY
+# or, personal use without a key, reuse Claude Code's own model:
+export HINDSIGHT_LLM_PROVIDER=claude-code
+
+# B) Hindsight Cloud / self-hosted server
+mkdir -p ~/.hindsight
+echo '{"hindsightApiUrl": "https://your-hindsight-server", "hindsightApiToken": "..."}' \
+  > ~/.hindsight/claude-code.json
+```
+
+By default, every project shares the single bank `claude_code`. To give
+each project its own memory, set `"dynamicBankId": true` in
+`~/.hindsight/claude-code.json`. See the [plugin README](https://github.com/vectorize-io/hindsight/tree/v0.9.2/hindsight-integrations/claude-code)
+for all the options. To upgrade, bump `ref` in `.claude/settings.json`.
+
+On Claude Code on the web the container is ephemeral. The local daemon's
+memory is lost when a session ends, so use option B there if memory
+should persist between cloud sessions.
