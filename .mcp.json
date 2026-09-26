@@ -2,7 +2,10 @@
   "mcpServers": {
     "perplexity": {
       "command": "npx",
-      "args": ["-y", "@perplexity-ai/mcp-server"],
+      "args": [
+        "-y",
+        "@perplexity-ai/mcp-server"
+      ],
       "env": {
         "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
       }
@@ -10,6 +13,34 @@
     "perplexity-computer": {
       "type": "http",
       "url": "https://www.perplexity.ai/rest/computer/mcp"
+    },
+    "granola": {
+      "type": "http",
+      "url": "https://mcp.granola.ai/mcp"
+    },
+    "slack": {
+      "type": "http",
+      "url": "https://mcp.slack.com/mcp",
+      "oauth": {
+        "clientId": "1601185624273.8899143856786",
+        "callbackPort": 3118
+      }
+    },
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "kondo": {
+      "type": "http",
+      "url": "https://relay.trykondo.com/mcp"
+    },
+    "zapier": {
+      "type": "http",
+      "url": "https://mcp.zapier.com/api/v1/connect"
+    },
+    "higgsfield": {
+      "type": "http",
+      "url": "https://mcp.higgsfield.ai/mcp"
     }
   }
 }

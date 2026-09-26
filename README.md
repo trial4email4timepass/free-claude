@@ -591,8 +591,10 @@ with the verified upstream source and the command to install it.
 
 ### Plugins (install via `/plugin`)
 
-None of these are wired into `.claude/settings.json`. Install the ones
-you want:
+All of these are pre-registered in `.claude/settings.json`
+(`extraKnownMarketplaces` + `enabledPlugins`), so Claude Code offers to
+install them when you trust this project folder. To install by hand, or
+into a different project:
 
 ```
 # codex-plugin-cc: OpenAI's Codex plugin
@@ -634,7 +636,10 @@ cd ~/.claude/skills/gstack && ./setup
 
 ### MCP servers (remote HTTP, OAuth in the browser)
 
-Each URL comes from the vendor's own setup docs:
+All six are in the root `.mcp.json`, so Claude Code prompts you to approve
+them when it opens this project, then asks you to sign in to each one
+(`/mcp`). Each URL comes from the vendor's own setup docs. To add them to
+another project or globally:
 
 ```bash
 claude mcp add --transport http granola    https://mcp.granola.ai/mcp
