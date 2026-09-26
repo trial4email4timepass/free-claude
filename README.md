@@ -239,6 +239,34 @@ own directory (not at the repo root), so none of them are auto-loaded —
 Claude Code only reads a root-level `.mcp.json`. They're there for
 reference/copy-in if you want to wire one up.
 
+## claude-osint skills (defensive subset)
+
+Four skills from [`elementalsouls/Claude-OSINT`](https://github.com/elementalsouls/Claude-OSINT)
+(MIT, by Sachin Sharma; `.claude/THIRD_PARTY_NOTICE_claude-osint_LICENSE`)
+are vendored under `.claude/skills/`. `claude-osint` is a library of
+structured `SKILL.md` files for the recon phase of **authorized** red-team
+and bug-bounty engagements. Only the **analysis / defensive-leaning** subset
+is vendored here — the ones that reason about exposure from already-collected
+or passively-read data, rather than driving active intrusion:
+
+| Skill | What it does |
+|---|---|
+| `osint-methodology` | The strategic "how to think" backbone — asset-graph discipline, severity rubric, confidence workflows, time budgeting, deliverable templates. |
+| `email-domain-security` | Composite email-spoofability verdict + SPF supply-chain analysis, computed from published DNS alone (passive TXT reads, no mail sent). |
+| `exposure-risk-quantification` | FAIR-aligned 0–100 + A–F risk score and $-denominated loss model over findings already collected (passive analysis only). |
+| `continuous-exposure-monitoring` | Re-scan/diff loop, finding-lifecycle state machine, and public-feed CTI chatter monitoring (passive OSINT + analysis). |
+
+**Deliberately not vendored:** the upstream repo's active-recon skills
+(`offensive-osint`, `osint-autopilot` and its `recon_pipeline.sh` /
+`host_enum.workflow.js` / secret-scanner scripts, `org-attack-surface`,
+`identity-provider-recon`, `cloud-saas-exposure`). Those carry offensive
+tooling that doesn't belong committed into a general-purpose skills repo; if
+you need them for an authorized engagement, install the full upstream repo
+into `~/.claude/skills/` locally per its README instead. As with any
+third-party skill, read the `SKILL.md` files before relying on them — a
+skill's instructions are executed as trusted input by whatever agent loads
+them.
+
 ## rtk-plugin (full vendor, hooks NOT wired)
 
 This repo also vendors [enixCode/rtk-plugin](https://github.com/enixCode/rtk-plugin)
