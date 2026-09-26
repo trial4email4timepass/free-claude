@@ -273,6 +273,34 @@ behind it, rather than a static snapshot):
 /plugin install rtk-plugin@enix
 ```
 
+## security-audit-skill (full vendor)
+
+This repo also vendors [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill)
+(MIT, `.claude/THIRD_PARTY_NOTICE_security-audit-skill_LICENSE`) — the
+single-repo skill that seeded Cloudflare's fleet-wide vulnerability
+discovery harness (see [Build your own vulnerability
+harness](https://blog.cloudflare.com/build-your-own-vulnerability-harness)).
+It turns a coding agent into a security auditor: isolated hunter agents work
+a deterministic coverage ledger across a large library of attack-class
+references (memory safety, AI/LLM, web protocol & auth, client-side, supply
+chain, cloud/deployment, RPC/messaging, resource exhaustion, data isolation,
+desktop/mobile/IPC), every candidate finding goes through independent
+validation and record verification, and the run ends in a target-neutral
+`REPORT.md`/`FINDINGS-DETAIL.md`/`NEEDS-VALIDATION.md`. Guidance mode (ad
+hoc security questions/reviews) is used by default; the full six-phase audit
+workflow only runs on an explicit audit/pen-test/full-review request.
+
+- `.claude/vendor/security-audit-skill/` — source-of-truth copy (`README.md`,
+  `LICENSE`, `skills/security-audit/`).
+- `.claude/skills/security-audit/` — the skill surfaced live: `SKILL.md`
+  plus its phase/attack-class reference docs and the two zero-dependency
+  Node validators (`validate-findings.cjs`, `validate-coverage-ledger.cjs`,
+  with their `.test.cjs` files) that check `findings.json` and
+  `coverage-ledger.json` during a run.
+
+No hooks or `.mcp.json` ship with this plugin, so there's no wiring decision
+to make here — it's pure skill guidance, discoverable via the `Skill` tool.
+
 ## ui-ux-pro-max-skill (full vendor)
 
 This repo also vendors [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
