@@ -574,6 +574,88 @@ once from a snapshot of the upstream leaderboard's README (which itself
 refreshes every 15 minutes); this repo does not auto-sync with it, so
 entries here may drift from the live leaderboard over time.
 
+## "21 things to install in Claude" checklist
+
+Status of each item from the "21 things to install in Claude" graphic,
+with the verified upstream source and the command to install it.
+
+### Already in this repo
+
+| Item | Where |
+|---|---|
+| superpowers | `.claude/skills/` (see *Superpowers skills framework* above) |
+| frontend-design | `.claude/skills/frontend-design/` |
+| skill-creator | `.claude/skills/skill-creator/` |
+| mcp-builder | `.claude/skills/mcp-builder/` |
+| find-skills | `.claude/skills/find-skills/`, vendored from [vercel-labs/skills](https://github.com/vercel-labs/skills/tree/main/skills/find-skills) (MIT, `LICENSE.txt` included) |
+
+### Plugins (install via `/plugin`)
+
+All of these are pre-registered in `.claude/settings.json`
+(`extraKnownMarketplaces` + `enabledPlugins`), so Claude Code offers to
+install them when you trust this project folder. To install by hand, or
+into a different project:
+
+```
+# codex-plugin-cc: OpenAI's Codex plugin
+/plugin marketplace add openai/codex-plugin-cc
+/plugin install codex@openai-codex
+
+# financial-services: IB, PE, equity research, wealth (19 plugins, pick the ones you need)
+/plugin marketplace add anthropics/financial-services
+/plugin install financial-analysis@claude-for-financial-services
+/plugin install investment-banking@claude-for-financial-services
+/plugin install equity-research@claude-for-financial-services
+/plugin install private-equity@claude-for-financial-services
+
+# claude-for-legal: one plugin per practice area
+/plugin marketplace add anthropics/claude-for-legal
+/plugin install commercial-legal@claude-for-legal   # also: privacy-, product-, corporate-, employment-,
+                                                    # regulatory-, ai-governance-, litigation-, ip-legal
+
+# marketingskills
+/plugin marketplace add coreyhaines31/marketingskills
+/plugin install marketing-skills@marketingskills
+
+# hyperframes: write HTML, render video
+/plugin marketplace add heygen-com/hyperframes
+/plugin install hyperframes@hyperframes
+
+# claude-seo
+/plugin marketplace add AgriciDaniel/claude-seo
+/plugin install claude-seo@agricidaniel-claude-seo
+```
+
+**gstack** ([garrytan/gstack](https://github.com/garrytan/gstack)) is not a
+plugin. It is a skills bundle with a build step (needs Bun). In Claude Code
+on the web, `.claude/hooks/session-start.sh` installs it automatically at
+session start (~15-30s cold, skipped once installed; skipped if `bun` is
+missing). Anywhere else, install it by hand:
+
+```bash
+git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
+cd ~/.claude/skills/gstack && ./setup
+```
+
+### MCP servers (remote HTTP, OAuth in the browser)
+
+All six are in the root `.mcp.json`, so Claude Code prompts you to approve
+them when it opens this project, then asks you to sign in to each one
+(`/mcp`). Each URL comes from the vendor's own setup docs. To add them to
+another project or globally:
+
+```bash
+claude mcp add --transport http granola    https://mcp.granola.ai/mcp
+claude mcp add --transport http notion     https://mcp.notion.com/mcp
+claude mcp add --transport http kondo      https://relay.trykondo.com/mcp   # Kondo Business tier+
+claude mcp add --transport http zapier     https://mcp.zapier.com/api/v1/connect
+claude mcp add --transport http higgsfield https://mcp.higgsfield.ai/mcp
+/plugin install slack    # Slack's official plugin; bundles https://mcp.slack.com/mcp with its OAuth client
+```
+
+On claude.ai or Claude Desktop, add the same URLs under
+Customize → Connectors → Add custom connector.
+
 ## Cua computer-use skills (trycua/cua)
 
 Two skills vendored from [trycua/cua](https://github.com/trycua/cua) (MIT,
