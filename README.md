@@ -846,3 +846,57 @@ because they expose real engineering trade-offs.
 
 Repo names, technologies, and capabilities can drift as these projects
 change — recheck before relying on any of it.
+
+## khoj skill
+
+`.claude/skills/khoj/` connects Claude Code to a self-hosted
+[Khoj](https://github.com/khoj-ai/khoj) server (the "AI second brain" that
+indexes your notes/docs). Khoj itself is AGPL-3.0 and is **not** vendored
+here — the skill is original to this repo and just calls Khoj's HTTP API
+(checked against upstream commit `ae229ca`):
+
+- `scripts/khoj.sh search|chat|upload|files|health` — semantic search
+  (`GET /api/search`), grounded Q&A (`POST /api/chat`), add files
+  (`PATCH /api/content`), list indexed files.
+- Configure with `KHOJ_URL` (default `http://localhost:42110`) and
+  `KHOJ_API_KEY` (Khoj web app → Settings → API Keys).
+
+Khoj Cloud (`app.khoj.dev`) has been shut down, so you need to run Khoj
+yourself (`pip install 'khoj[local]'` or upstream's `docker-compose.yml`; see
+<https://docs.khoj.dev/get-started/setup>).
+
+## openviking-memory plugin (pinned)
+
+`.claude-plugin/marketplace.json` also lists **`openviking-memory`**, the
+Claude Code plugin that [volcengine/OpenViking](https://github.com/volcengine/OpenViking)
+ships in `examples/claude-code-memory-plugin`. Nothing is vendored: the entry
+is a `git-subdir` source **pinned to commit
+`276dfffc801716c9a2abf9129ace5681fe4941a0`** (plugin v0.6.4), so upstream
+changes don't reach you until the `sha` here is bumped deliberately. The
+plugin's manifest declares Apache-2.0; the OpenViking repo as a whole is
+AGPL-3.0.
+
+```
+/plugin marketplace add trial4email4timepass/free-claude
+/plugin install openviking-memory@free-claude
+```
+
+It needs an OpenViking server you run (default `http://localhost:1933`, no
+auth in local mode) or a remote one configured in `~/.openviking/ovcli.conf`
+— see the plugin's
+[README](https://github.com/volcengine/OpenViking/tree/276dfffc801716c9a2abf9129ace5681fe4941a0/examples/claude-code-memory-plugin).
+
+**Know what it runs before enabling it.** It registers Node hooks on nine
+events, including:
+
+- `UserPromptSubmit` — searches the server and injects recalled memories
+  into every prompt.
+- `Stop` / `SubagentStop` / `PreCompact` / `SessionEnd` — **sends
+  conversation turns to the OpenViking server** to be stored as memories
+  (turn off with `OPENVIKING_AUTO_CAPTURE=false`).
+- `PreToolUse` on `Read|Glob|Grep|Edit|Write|Bash` — a guard for
+  `viking://` URIs.
+
+It also starts a stdio MCP server (`servers/mcp-proxy.mjs`). Point it only at
+a server you trust with your conversation contents. To update, review the
+upstream diff for `examples/claude-code-memory-plugin`, then change the `sha`.
