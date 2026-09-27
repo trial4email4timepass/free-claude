@@ -3,6 +3,7 @@
 ## Installed skills
 
 - **create-plan** (`.claude/skills/create-plan/`) — turns a coding request into a single, read-only, actionable plan. Ported from [openai/skills](https://github.com/openai/skills)'s `skills/.experimental/create-plan` (as of commit `a511969`, the last commit before it was removed upstream in [`ea6b206`](https://github.com/openai/skills/commit/ea6b206c683087da5b503f5ac9d7202b326ac6bb)). Licensed under Apache License 2.0; see `.claude/skills/create-plan/LICENSE.txt`.
+- **laya-coreml** (`.claude/skills/laya-coreml/`) — how to install and use [mizorewww/laya-coreml](https://github.com/mizorewww/laya-coreml) (PyPI `laya-coreml`) for local typed decisions (choice / score / yes-no probabilities) on Apple Silicon via Core ML and the Neural Engine, plus its CLI and Snake demo. The upstream repo ships no Claude skill; this one is written from its README and `docs/USAGE.md`. Requires macOS 15+ on Apple Silicon. Upstream is Apache-2.0; see `.claude/skills/laya-coreml/LICENSE.txt`.
 
 ## What it is
 
