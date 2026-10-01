@@ -9,6 +9,10 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
+# Run in the background so the session starts immediately; graphify and
+# gstack become available once this finishes (~30-40s cold).
+echo '{"async": true, "asyncTimeout": 600000}'
+
 # Graphify (graphifyy CLI + its /graphify Claude Code skill).
 install_graphify() {
   if ! command -v uv >/dev/null 2>&1; then
@@ -53,7 +57,7 @@ install_gstack() {
     || echo "gstack setup failed; run ~/.claude/skills/gstack/setup manually" >&2
 }
 
-install_graphify
-install_gstack
+install_graphify >&2
+install_gstack >&2
 
 exit 0

@@ -563,6 +563,75 @@ Chrome via Browser Harness), the CLI inspector (`uv run jev`), the library usage
 goal)`), and the point upstream itself makes: a `DONE` state is not proof of success and must be
 independently verified.
 
+## OmniRoute (reference note, not vendored)
+
+[diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute) (MIT) is
+a self-hosted AI gateway: one OpenAI-compatible endpoint
+(`http://localhost:20128/v1`) in front of hundreds of LLM providers, with
+quota-aware fallback, routing strategies, and prompt compression. Like the
+notes above, it's a full Node.js application you run yourself, not a Claude
+Code plugin, so there's nothing here to vendor into `.claude/`.
+
+- There's no official hosted gateway — `gateway.omniroute.dev` does not
+  resolve. You run your own instance (laptop, VPS, Fly/Docker); the project
+  site is [omniroute.online](https://omniroute.online/).
+- Install: `npm install -g omniroute` (then `omniroute` serves gateway +
+  dashboard on port 20128) or the multi-arch Docker image
+  `diegosouzapw/omniroute`. `omniroute doctor` diagnoses providers/ports.
+- Also exposes an MCP server (`omniroute --mcp` over stdio, or HTTP at
+  `/api/mcp/stream`), A2A, webhooks, and a remote CLI
+  (`omniroute connect <host>`) with scoped `read`/`write`/`admin` tokens.
+- **Not wired into this repo on purpose.** Pointing Claude Code at it means
+  every prompt and file you send goes through that gateway, and a dead
+  `ANTHROPIC_BASE_URL` in the committed `.claude/settings.json` would break
+  every session here. Set it per-machine instead, only for an instance you
+  run or trust. Cloud (claude.ai/code) sessions can't reach your
+  `localhost`; they'd need a public HTTPS URL allowed by the environment's
+  network policy.
+
+```bash
+docker run -d --name omniroute --restart unless-stopped \
+  -p 127.0.0.1:20128:20128 -v omniroute-data:/app/data \
+  diegosouzapw/omniroute:latest
+
+# Route Claude Code through it (your machine only):
+export ANTHROPIC_BASE_URL=http://localhost:20128/v1
+export ANTHROPIC_API_KEY=<your OmniRoute key>
+
+# Or just give Claude Code OmniRoute's management tools over MCP:
+claude mcp add --transport http omniroute http://localhost:20128/api/mcp/stream
+```
+
+## agent-scripts (full vendor, skills only)
+
+This repo also vendors [steipete/agent-scripts](https://github.com/steipete/agent-scripts)
+(MIT, `.claude/THIRD_PARTY_NOTICE_agent-scripts_LICENSE`) — Peter
+Steinberger's shared agent instructions (`AGENTS.MD`), workflow skills, and
+small helper scripts, snapshot of upstream `d15557c`.
+
+- `.claude/vendor/agent-scripts/` — an unmodified copy of the upstream repo
+  (minus `.git`). This is the source of truth.
+- **Skills** — 52 of the upstream skills are surfaced into
+  `.claude/skills/<name>/` as plain copies. Many are tuned to Peter's own
+  setup (macOS, Swift/Xcode, OpenClaw, Codex, 1Password, his Mac fleet) and
+  call CLIs that aren't installed here; they only trigger when a task
+  matches their description, so unused ones are inert.
+- **Not surfaced:**
+  - `frontend-design` — this repo already ships Anthropic's `frontend-design`
+    skill; the upstream copy is kept in the vendor dir only.
+  - `codex-first` — its description routes *all* Claude Code implementation,
+    fixing, rebasing and PR landing to Codex CLI (OpenAI). That's a global
+    behavior change, not a task skill, so it's vendored but deliberately not
+    loaded. Copy it into `.claude/skills/` yourself if you want that.
+  - 15 skills upstream are symlinks into sibling repos on Peter's machine
+    (`../../agent-skills/…`, `../../wacli/…`, etc.: `autoreview`,
+    `behavior-validator`, `birdclaw`, `crabbox`, `discrawl`, `gitcrawl`,
+    `gog`, `graincrawl`, `handoff`, `imsg`, `peekaboo`, `session-viewer`,
+    `slacrawl`, `wacli`, `wacrawl`). They dangle outside his workspace, so
+    they're omitted.
+- `hooks/pre-commit` (runs upstream's `scripts/validate-skills`) is vendored
+  but not wired into this repo's git hooks or `.claude/settings.json`.
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
