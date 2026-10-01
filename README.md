@@ -400,6 +400,36 @@ export ANTHROPIC_API_KEY=<your OmniRoute key>
 claude mcp add --transport http omniroute http://localhost:20128/api/mcp/stream
 ```
 
+## agent-scripts (full vendor, skills only)
+
+This repo also vendors [steipete/agent-scripts](https://github.com/steipete/agent-scripts)
+(MIT, `.claude/THIRD_PARTY_NOTICE_agent-scripts_LICENSE`) — Peter
+Steinberger's shared agent instructions (`AGENTS.MD`), workflow skills, and
+small helper scripts, snapshot of upstream `d15557c`.
+
+- `.claude/vendor/agent-scripts/` — an unmodified copy of the upstream repo
+  (minus `.git`). This is the source of truth.
+- **Skills** — 52 of the upstream skills are surfaced into
+  `.claude/skills/<name>/` as plain copies. Many are tuned to Peter's own
+  setup (macOS, Swift/Xcode, OpenClaw, Codex, 1Password, his Mac fleet) and
+  call CLIs that aren't installed here; they only trigger when a task
+  matches their description, so unused ones are inert.
+- **Not surfaced:**
+  - `frontend-design` — this repo already ships Anthropic's `frontend-design`
+    skill; the upstream copy is kept in the vendor dir only.
+  - `codex-first` — its description routes *all* Claude Code implementation,
+    fixing, rebasing and PR landing to Codex CLI (OpenAI). That's a global
+    behavior change, not a task skill, so it's vendored but deliberately not
+    loaded. Copy it into `.claude/skills/` yourself if you want that.
+  - 15 skills upstream are symlinks into sibling repos on Peter's machine
+    (`../../agent-skills/…`, `../../wacli/…`, etc.: `autoreview`,
+    `behavior-validator`, `birdclaw`, `crabbox`, `discrawl`, `gitcrawl`,
+    `gog`, `graincrawl`, `handoff`, `imsg`, `peekaboo`, `session-viewer`,
+    `slacrawl`, `wacli`, `wacrawl`). They dangle outside his workspace, so
+    they're omitted.
+- `hooks/pre-commit` (runs upstream's `scripts/validate-skills`) is vendored
+  but not wired into this repo's git hooks or `.claude/settings.json`.
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
