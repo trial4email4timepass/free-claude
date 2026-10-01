@@ -928,3 +928,59 @@ events, including:
 It also starts a stdio MCP server (`servers/mcp-proxy.mjs`). Point it only at
 a server you trust with your conversation contents. To update, review the
 upstream diff for `examples/claude-code-memory-plugin`, then change the `sha`.
+
+## cognee-memory plugin (pinned)
+
+`.claude-plugin/marketplace.json` also lists **`cognee-memory`**, the official
+Claude Code plugin for [Cognee](https://github.com/topoteretes/cognee)
+(knowledge-graph memory for agents), shipped in
+[topoteretes/cognee-integrations](https://github.com/topoteretes/cognee-integrations)
+under `integrations/claude-code` (Apache-2.0). Nothing is vendored: the entry
+is a `git-subdir` source **pinned to commit
+`7538e97223770d445dcaacefc0b8737530e82a72`** (plugin v1.6.3), so upstream
+changes don't reach you until the `sha` here is bumped deliberately.
+
+```
+claude plugin marketplace add trial4email4timepass/free-claude
+claude plugin install cognee-memory@free-claude
+```
+
+Install from the shell before launching `claude` (the in-chat `/plugin`
+commands work too, but you must then start a new session so its
+`SessionStart` hook runs). Configure it once in `~/.cognee/.env`:
+
+- **Local mode** (default): the plugin downloads `uv` into
+  `~/.cognee-plugin/`, builds a Python 3.12 venv and starts a Cognee server on
+  `http://localhost:8011`. Set `LLM_API_KEY` for cognify, or leave it unset and,
+  with the `claude` CLI on PATH, it routes LLM calls through `claude -p` on
+  your subscription.
+- **Cognee Cloud / remote server**: set `COGNEE_BASE_URL` and
+  `COGNEE_API_KEY`; no local runtime is built.
+
+See the plugin's
+[README](https://github.com/topoteretes/cognee-integrations/tree/7538e97223770d445dcaacefc0b8737530e82a72/integrations/claude-code)
+for every option.
+
+**Know what it runs before enabling it.** It registers Python hooks on:
+
+- `SessionStart` — bootstraps/starts the local server (or connects to cloud).
+- `UserPromptSubmit` — searches memory and injects recalled context into every
+  prompt, and **stores each prompt**.
+- `PreToolUse` on `Read` — injects file context; `PostToolUse` on
+  `Bash|Agent|Read|Write|Edit|Grep|Glob` and `Stop` — **store tool traces and
+  replies** in session memory.
+- `PreCompact` / `SessionEnd` — build a memory anchor and sync the session
+  into graph memory.
+- `Stop` also runs `clear-transcript-context.py`, which **empties the
+  transcript** only if you set `COGNEE_CLAUDE_CLEAR_AFTER_MESSAGE=true`; it
+  is off by default.
+
+It also adds `cognee-*` skills (search, remember, forget, sync,
+switch-datasets, code) and a `cognee-recall` agent. In cloud mode your prompts
+and tool output leave the machine, so point it only at a server you trust.
+To update, review the upstream diff for `integrations/claude-code`, then
+change the `sha`.
+
+For MCP-only use (no hooks), Cognee also ships `cognee-mcp` — run it with
+`python src/server.py --transport http` from `cognee/cognee-mcp` and add it
+with `claude mcp add cognee -t http http://localhost:8000/mcp`.
