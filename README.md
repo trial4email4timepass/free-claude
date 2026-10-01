@@ -361,6 +361,45 @@ cp config/config.example.toml config/config.toml   # then add your API key
 python main.py
 ```
 
+## OmniRoute (reference note, not vendored)
+
+[diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute) (MIT) is
+a self-hosted AI gateway: one OpenAI-compatible endpoint
+(`http://localhost:20128/v1`) in front of hundreds of LLM providers, with
+quota-aware fallback, routing strategies, and prompt compression. Like the
+notes above, it's a full Node.js application you run yourself, not a Claude
+Code plugin, so there's nothing here to vendor into `.claude/`.
+
+- There's no official hosted gateway — `gateway.omniroute.dev` does not
+  resolve. You run your own instance (laptop, VPS, Fly/Docker); the project
+  site is [omniroute.online](https://omniroute.online/).
+- Install: `npm install -g omniroute` (then `omniroute` serves gateway +
+  dashboard on port 20128) or the multi-arch Docker image
+  `diegosouzapw/omniroute`. `omniroute doctor` diagnoses providers/ports.
+- Also exposes an MCP server (`omniroute --mcp` over stdio, or HTTP at
+  `/api/mcp/stream`), A2A, webhooks, and a remote CLI
+  (`omniroute connect <host>`) with scoped `read`/`write`/`admin` tokens.
+- **Not wired into this repo on purpose.** Pointing Claude Code at it means
+  every prompt and file you send goes through that gateway, and a dead
+  `ANTHROPIC_BASE_URL` in the committed `.claude/settings.json` would break
+  every session here. Set it per-machine instead, only for an instance you
+  run or trust. Cloud (claude.ai/code) sessions can't reach your
+  `localhost`; they'd need a public HTTPS URL allowed by the environment's
+  network policy.
+
+```bash
+docker run -d --name omniroute --restart unless-stopped \
+  -p 127.0.0.1:20128:20128 -v omniroute-data:/app/data \
+  diegosouzapw/omniroute:latest
+
+# Route Claude Code through it (your machine only):
+export ANTHROPIC_BASE_URL=http://localhost:20128/v1
+export ANTHROPIC_API_KEY=<your OmniRoute key>
+
+# Or just give Claude Code OmniRoute's management tools over MCP:
+claude mcp add --transport http omniroute http://localhost:20128/api/mcp/stream
+```
+
 ## trending-claude-skills marketplace
 
 `.claude-plugin/marketplace.json` at the repo root lists every entry
