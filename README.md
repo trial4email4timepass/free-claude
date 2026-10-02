@@ -545,6 +545,19 @@ must be installed and running for the tools to resolve. OpenDesign also has
 its own plugin spec + registry (`plugins/spec/`, `plugins/registry/`) for
 authoring and publishing OD plugins, separate from Claude Code's.
 
+## free-llm-api (authored skill)
+
+`.claude/skills/free-llm-api/` is an authored skill (upstream ships no `SKILL.md`) distilled from
+[RealTask/free-llm-api](https://github.com/RealTask/free-llm-api) (MIT, snapshot `f2bb6dd`; `LICENSE.txt`
+included): a catalog of free-tier AI APIs (Google AI Studio, Groq, Cerebras, OpenRouter, Mistral,
+Cloudflare Workers AI, NVIDIA NIM, GitHub Models, Cohere, Hugging Face) for chat, coding, embeddings,
+speech, and images, with per-provider limits, env vars, and OpenAI-compatible base URLs. It recommends a
+primary + fallback provider for a use case and gives a working `openai`-SDK call plus a fallback chain.
+
+Only the catalog is used, not the upstream Python package: several of the package's hard-coded base URLs
+don't match the providers' documented endpoints (Groq, Cerebras, NVIDIA, GitHub Models), so the skill's
+`references/providers.md` uses corrected ones. Limits are a June 2026 snapshot and change without notice.
+
 ## jev-ultrafast (authored skill)
 
 `.claude/skills/jev-ultrafast/` is an authored skill (not vendored — upstream ships no `SKILL.md` or
