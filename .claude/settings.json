@@ -58,6 +58,12 @@
         "source": "github",
         "repo": "AgriciDaniel/claude-seo"
       }
+    },
+    "autoharness": {
+      "source": {
+        "source": "github",
+        "repo": "tigerless-labs/autoharness"
+      }
     }
   },
   "enabledPlugins": {
@@ -96,6 +102,7 @@
     "law-student@claude-for-legal": true,
     "legal-clinic@claude-for-legal": true,
     "legal-builder-hub@claude-for-legal": true,
-    "cocounsel-legal@claude-for-legal": true
+    "cocounsel-legal@claude-for-legal": true,
+    "autoharness@autoharness": true
   }
 }
