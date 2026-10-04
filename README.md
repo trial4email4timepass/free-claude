@@ -545,6 +545,20 @@ must be installed and running for the tools to resolve. OpenDesign also has
 its own plugin spec + registry (`plugins/spec/`, `plugins/registry/`) for
 authoring and publishing OD plugins, separate from Claude Code's.
 
+## REA — Reverse Engineer Anything (MCP server + skill)
+
+[morluto/rea](https://github.com/morluto/rea) (MIT) lets Claude investigate apps without their source:
+native binaries via Hopper or bring-your-own Ghidra, Electron/JavaScript bundles, managed PE assemblies,
+and user-owned browser pages, with evidence records for each conclusion.
+
+- **MCP server** — `rea` in `.mcp.json`, run as `npx -y rea-agents@3.2.1 mcp` (stdio, 114 tools).
+  Needs Node.js 22.19+ or 24.11+. To update, review the upstream changelog and change the pinned version.
+- **Skill** — `.claude/skills/reverse-engineer-anything/`, copied from upstream `skills/` at commit
+  `405732a` (release 3.2.1); `LICENSE.txt` included. It routes each target type to the right REA tool.
+
+Analysis runs locally. Native-binary analysis needs Hopper or Ghidra installed on your machine
+(`npx rea-agents setup` can configure Hopper); JavaScript, Electron and browser tools work without them.
+
 ## Run Claude Code on free models
 
 - [`claude-on-openrouter/`](claude-on-openrouter) — OpenRouter `:free` models (Nemotron, Laguna, Qwen, …), no proxy needed.
