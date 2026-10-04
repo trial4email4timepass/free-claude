@@ -41,6 +41,14 @@
     "higgsfield": {
       "type": "http",
       "url": "https://mcp.higgsfield.ai/mcp"
+    },
+    "rea": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rea-agents@3.2.1",
+        "mcp"
+      ]
     }
   }
 }
