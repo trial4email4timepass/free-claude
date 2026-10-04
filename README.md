@@ -558,6 +558,14 @@ Only the catalog is used, not the upstream Python package: several of the packag
 don't match the providers' documented endpoints (Groq, Cerebras, NVIDIA, GitHub Models), so the skill's
 `references/providers.md` uses corrected ones. Limits are a June 2026 snapshot and change without notice.
 
+`references/freellm-directory.md` adds a wider, newer directory distilled from
+[open-free-llm-api/awesome-freellm-apis](https://github.com/open-free-llm-api/awesome-freellm-apis) (MIT,
+snapshot `c2bd37c`, data 2026-10-03; `LICENSE-awesome-freellm-apis.txt` included), which mirrors
+[freellm.net](https://freellm.net): 30 providers with base URLs, signup requirements, notable free models, and
+limits, plus coding-tool config. Native-only base URLs (Gemini, Cohere, Ollama Cloud) are swapped for their
+OpenAI-compatible ones, and upstream's Claude Code example (pointing `ANTHROPIC_BASE_URL` at OpenAI-compatible
+endpoints, which Claude Code can't speak) is replaced with Anthropic-compatible-endpoint and proxy options.
+
 ## jev-ultrafast (authored skill)
 
 `.claude/skills/jev-ultrafast/` is an authored skill (not vendored — upstream ships no `SKILL.md` or

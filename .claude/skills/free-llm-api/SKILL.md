@@ -1,9 +1,9 @@
 ---
 name: free-llm-api
-description: Recommend and wire up free-tier or completely free AI model APIs (LLM chat, coding, embeddings, speech-to-text, text-to-speech, image generation) with their daily/minute limits, signup requirements, and OpenAI-compatible endpoints. Use when the user asks for a free LLM API, a no-cost alternative to a paid model, which free provider fits a use case (high volume, coding agent, STT, embeddings, images), how to get around rate limits with fallback across free providers, or how to call Groq, Google AI Studio, OpenRouter, Cerebras, Mistral, Cloudflare Workers AI, NVIDIA NIM, GitHub Models, Cohere, or Hugging Face for free.
+description: Recommend and wire up free-tier or completely free AI model APIs (LLM chat, coding, embeddings, speech-to-text, text-to-speech, image generation) with their daily/minute limits, signup requirements, and OpenAI-compatible endpoints. Use when the user asks for a free LLM API, a no-cost alternative to a paid model, which free provider fits a use case (high volume, coding agent, STT, embeddings, images), how to get around rate limits with fallback across free providers, or how to call Groq, Google AI Studio, OpenRouter, Cerebras, Mistral, Cloudflare Workers AI, NVIDIA NIM, GitHub Models, Cohere, Hugging Face, ModelScope, Kilo Code, OpenCode Zen, SambaNova, Z AI, or other free providers, or how to point Claude Code, Codex CLI, Cursor, or Aider at a free model backend.
 metadata:
   short-description: Pick and call free LLM/AI APIs
-  source: https://github.com/RealTask/free-llm-api (MIT, snapshot f2bb6dd, data researched June 2026)
+  source: https://github.com/RealTask/free-llm-api (MIT, snapshot f2bb6dd, data researched June 2026); https://github.com/open-free-llm-api/awesome-freellm-apis (MIT, snapshot c2bd37c, data 2026-10-03)
 ---
 
 # Free LLM API catalog
@@ -50,6 +50,11 @@ caveats" below).
 
 Full per-provider details, model lists, and env vars: `references/providers.md`.
 Trial-credit (not free forever) providers: `references/trial-credits.md`.
+Wider, newer directory (30 providers, Oct 2026, from freellm.net) plus how to
+point Claude Code / Codex / Cursor at a free backend:
+`references/freellm-directory.md`. Note Claude Code needs an
+Anthropic-compatible endpoint or a translating proxy, not a plain
+OpenAI-compatible base URL.
 
 ## Workflow
 
