@@ -1,6 +1,7 @@
 # LiteLLM proxy: lets Claude Code (Anthropic Messages API) use free
 # OpenAI-compatible models. Used by claude-free.sh when NVIDIA_NIM_API_KEY is set.
-# Primary: NVIDIA NIM (~40 RPM, no daily cap). Fallbacks: Groq, then Gemini
+# Primary: NVIDIA NIM (~40 RPM, no daily cap). Note: some listed NIM models
+# (e.g. moonshotai/kimi-k2.6) return 404 for free accounts; test before swapping. Fallbacks: Groq, then Gemini
 # (each skipped with an error if its key is unset).
 #
 # Verify model ids:
@@ -8,13 +9,17 @@
 #   curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY" | jq -r '.data[].id'
 #   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" | jq -r '.models[].name'
 model_list:
-  - model_name: free-main
+  - model_name: free-main            # fast, reliable tool calls (~1s) in testing
     litellm_params:
-      model: nvidia_nim/moonshotai/kimi-k2.6
+      model: nvidia_nim/z-ai/glm-5.3
       api_key: os.environ/NVIDIA_NIM_API_KEY
   - model_name: free-fast
     litellm_params:
-      model: nvidia_nim/z-ai/glm-5.1
+      model: nvidia_nim/z-ai/glm-5.3
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: nim-alt              # reasoning model, slower (~10s); first fallback
+    litellm_params:
+      model: nvidia_nim/moonshotai/kimi-k3
       api_key: os.environ/NVIDIA_NIM_API_KEY
   - model_name: groq-main
     litellm_params:
@@ -27,7 +32,7 @@ model_list:
 
 litellm_settings:
   drop_params: true
-  fallbacks: [{"free-main": ["groq-main", "free-backup"]}, {"free-fast": ["groq-main", "free-backup"]}]
+  fallbacks: [{"free-main": ["nim-alt", "groq-main", "free-backup"]}, {"free-fast": ["nim-alt", "groq-main", "free-backup"]}]
   context_window_fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
 
 general_settings:

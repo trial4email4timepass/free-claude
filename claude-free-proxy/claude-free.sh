@@ -4,14 +4,14 @@
 # With NVIDIA_NIM_API_KEY set, NVIDIA NIM becomes the main provider and Groq
 # (if set) and Gemini (if set) become fallbacks.
 set -euo pipefail
-cd "$(dirname "$0")"
+DIR="$(cd "$(dirname "$0")" && pwd)"   # config lives here; claude runs in the caller's cwd
 
 if [[ -n "${NVIDIA_NIM_API_KEY:-}" ]]; then
-  CONFIG=litellm-nim.yaml
+  CONFIG="$DIR/litellm-nim.yaml"
   echo "provider: NVIDIA NIM (fallbacks: Groq, Gemini if their keys are set)" >&2
 else
   : "${GROQ_API_KEY:?set GROQ_API_KEY (console.groq.com/keys) or NVIDIA_NIM_API_KEY}"
-  CONFIG=litellm.yaml
+  CONFIG="$DIR/litellm.yaml"
   echo "provider: Groq (set NVIDIA_NIM_API_KEY to switch to NVIDIA NIM)" >&2
 fi
 if [[ -z "${GEMINI_API_KEY:-}" ]]; then
@@ -34,21 +34,21 @@ STATE="${KEY_FILE%/*}/config"
 mkdir -p "${STATE%/*}"
 if curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null \
    && [[ "$(cat "$STATE" 2>/dev/null)" != "$CONFIG" ]]; then
-  echo "restarting proxy with $CONFIG" >&2
-  pkill -f "[l]itellm --config litellm" || true
+  echo "restarting proxy with ${CONFIG##*/}" >&2
+  pkill -f "[l]itellm --config $DIR/litellm" || true
   sleep 2
 fi
 
 if ! curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null; then
   command -v litellm >/dev/null || { echo "install: pip install 'litellm[proxy]'" >&2; exit 1; }
   echo "$CONFIG" >"$STATE"
-  litellm --config "$CONFIG" --host 127.0.0.1 --port "$PORT" >litellm.log 2>&1 &
+  litellm --config "$CONFIG" --host 127.0.0.1 --port "$PORT" >"$DIR/litellm.log" 2>&1 &
   for _ in $(seq 1 60); do
     curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null && break
     sleep 1
   done
   curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null \
-    || { echo "proxy failed to start; see litellm.log" >&2; exit 1; }
+    || { echo "proxy failed to start; see $DIR/litellm.log" >&2; exit 1; }
 fi
 
 export ANTHROPIC_BASE_URL="http://localhost:$PORT"
