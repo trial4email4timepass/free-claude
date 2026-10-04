@@ -545,6 +545,11 @@ must be installed and running for the tools to resolve. OpenDesign also has
 its own plugin spec + registry (`plugins/spec/`, `plugins/registry/`) for
 authoring and publishing OD plugins, separate from Claude Code's.
 
+## Run Claude Code on free models
+
+- [`claude-on-openrouter/`](claude-on-openrouter) — OpenRouter `:free` models (Nemotron, Laguna, Qwen, …), no proxy needed.
+- [`claude-on-nim/`](claude-on-nim) — NVIDIA NIM free models through a local LiteLLM proxy.
+
 ## free-llm-api (authored skill)
 
 `.claude/skills/free-llm-api/` is an authored skill (upstream ships no `SKILL.md`) distilled from
