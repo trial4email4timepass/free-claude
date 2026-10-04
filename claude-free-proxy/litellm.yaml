@@ -1,0 +1,60 @@
+# LiteLLM proxy: lets Claude Code (Anthropic Messages API) use free
+# OpenAI-compatible models. Primary: Groq (email signup, no card).
+# Optional fallback: Google Gemini, used when Groq rejects a request
+# (rate limit, or a request too large for Groq's free tokens-per-minute cap).
+#
+# claude-free.sh uses litellm-nim.yaml instead when NVIDIA_NIM_API_KEY is set.
+#
+# Verify model ids:
+#   curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY" | jq -r '.data[].id'
+#   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" | jq -r '.models[].name'
+model_list:
+  - model_name: free-main            # main coding model
+    litellm_params:
+      model: groq/moonshotai/kimi-k2-instruct-0905
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: free-fast            # background/haiku-class tasks
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: free-backup          # fallback; needs GEMINI_API_KEY
+    litellm_params:
+      model: gemini/gemini-3.6-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+
+  # Pickable in Claude Code's /model menu (rows in picker-groq.json).
+  - model_name: groq/kimi-k2
+    litellm_params:
+      model: groq/moonshotai/kimi-k2-instruct-0905
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: groq/llama-3.3-70b
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: groq/llama-3.1-8b
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: gemini/3.6-flash
+    litellm_params:
+      model: gemini/gemini-3.6-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+  # Any Claude model name (e.g. the picker's built-in "Default" row) goes to the main free model.
+  - model_name: "claude-*"
+    litellm_params:
+      model: groq/moonshotai/kimi-k2-instruct-0905
+      api_key: os.environ/GROQ_API_KEY
+
+litellm_settings:
+  drop_params: true                  # drop Anthropic-only params the backend rejects
+  fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
+  context_window_fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY   # claude-free.sh generates and stores one
+
+router_settings:
+  num_retries: 2
+  retry_after: 5
