@@ -1,0 +1,38 @@
+{
+  "modelPicker": {
+    "options": [
+      {
+        "model": "free-main",
+        "label": "Auto (Groq Kimi K2 + Gemini fallback)",
+        "description": "Default. Falls back to Gemini on rate limits / oversized requests"
+      },
+      {
+        "model": "groq/kimi-k2",
+        "label": "Kimi K2 (Groq)",
+        "description": "Groq - strongest free Groq model for coding"
+      },
+      {
+        "model": "groq/llama-3.3-70b",
+        "label": "Llama 3.3 70B (Groq)",
+        "description": "Groq - fast general model"
+      },
+      {
+        "model": "groq/llama-3.1-8b",
+        "label": "Llama 3.1 8B (Groq)",
+        "description": "Groq - tiny and very fast; weak at tool use"
+      },
+      {
+        "model": "gemini/3.6-flash",
+        "label": "Gemini 3.6 Flash",
+        "description": "Google - needs GEMINI_API_KEY; free tier may train on prompts"
+      }
+    ]
+  },
+  "availableModels": [
+    "free-main",
+    "groq/kimi-k2",
+    "groq/llama-3.3-70b",
+    "groq/llama-3.1-8b",
+    "gemini/3.6-flash"
+  ]
+}
