@@ -1,0 +1,40 @@
+# LiteLLM proxy: lets Claude Code (Anthropic Messages API) use free
+# OpenAI-compatible models. Primary: Groq (email signup, no card).
+# Optional fallback: Google Gemini, used when Groq rejects a request
+# (rate limit, or a request too large for Groq's free tokens-per-minute cap).
+#
+# Verify model ids:
+#   curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY" | jq -r '.data[].id'
+#   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" | jq -r '.models[].name'
+model_list:
+  - model_name: free-main            # main coding model
+    litellm_params:
+      model: groq/moonshotai/kimi-k2-instruct-0905
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: free-fast            # background/haiku-class tasks
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: free-backup          # fallback; needs GEMINI_API_KEY
+    litellm_params:
+      model: gemini/gemini-3.6-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+  # NVIDIA NIM alternative (phone verification, ~40 RPM). To use it as the
+  # main model, swap it in for free-main and set NVIDIA_NIM_API_KEY.
+  # - model_name: free-main
+  #   litellm_params:
+  #     model: nvidia_nim/moonshotai/kimi-k2.6
+  #     api_key: os.environ/NVIDIA_NIM_API_KEY
+
+litellm_settings:
+  drop_params: true                  # drop Anthropic-only params the backend rejects
+  fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
+  context_window_fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY   # claude-free.sh generates and stores one
+
+router_settings:
+  num_retries: 2
+  retry_after: 5

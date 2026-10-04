@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Start the LiteLLM proxy (if not running) and launch Claude Code against it.
-# Usage: NVIDIA_NIM_API_KEY=nvapi-... ./claude-nim.sh [claude args...]
+# Usage: GROQ_API_KEY=gsk_... [GEMINI_API_KEY=...] ./claude-free.sh [claude args...]
 set -euo pipefail
 cd "$(dirname "$0")"
 
-: "${NVIDIA_NIM_API_KEY:?set NVIDIA_NIM_API_KEY (get one at build.nvidia.com/settings/api-keys)}"
+: "${GROQ_API_KEY:?set GROQ_API_KEY (get one at console.groq.com/keys)}"
+if [[ -z "${GEMINI_API_KEY:-}" ]]; then
+  echo "note: GEMINI_API_KEY not set; requests Groq rejects won't fall back (key: aistudio.google.com/app/apikey)" >&2
+fi
 PORT="${LITELLM_PORT:-4000}"
 
 # The proxy refuses to start without a master key; generate one once and reuse it.
-KEY_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/claude-nim/master_key"
+KEY_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/claude-free/master_key"
 if [[ -z "${LITELLM_MASTER_KEY:-}" ]]; then
   if [[ ! -s "$KEY_FILE" ]]; then
     mkdir -p "$(dirname "$KEY_FILE")"
