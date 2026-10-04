@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # Start the LiteLLM proxy (if not running) and launch Claude Code against it.
 # Usage: GROQ_API_KEY=gsk_... [GEMINI_API_KEY=...] ./claude-free.sh [claude args...]
+# With NVIDIA_NIM_API_KEY set, NVIDIA NIM becomes the main provider and Groq
+# (if set) and Gemini (if set) become fallbacks.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-: "${GROQ_API_KEY:?set GROQ_API_KEY (get one at console.groq.com/keys)}"
+if [[ -n "${NVIDIA_NIM_API_KEY:-}" ]]; then
+  CONFIG=litellm-nim.yaml
+  echo "provider: NVIDIA NIM (fallbacks: Groq, Gemini if their keys are set)" >&2
+else
+  : "${GROQ_API_KEY:?set GROQ_API_KEY (console.groq.com/keys) or NVIDIA_NIM_API_KEY}"
+  CONFIG=litellm.yaml
+  echo "provider: Groq (set NVIDIA_NIM_API_KEY to switch to NVIDIA NIM)" >&2
+fi
 if [[ -z "${GEMINI_API_KEY:-}" ]]; then
-  echo "note: GEMINI_API_KEY not set; requests Groq rejects won't fall back (key: aistudio.google.com/app/apikey)" >&2
+  echo "note: GEMINI_API_KEY not set; no Gemini fallback (key: aistudio.google.com/app/apikey)" >&2
 fi
 PORT="${LITELLM_PORT:-4000}"
 
@@ -21,9 +30,19 @@ if [[ -z "${LITELLM_MASTER_KEY:-}" ]]; then
 fi
 export LITELLM_MASTER_KEY
 
+STATE="${KEY_FILE%/*}/config"
+mkdir -p "${STATE%/*}"
+if curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null \
+   && [[ "$(cat "$STATE" 2>/dev/null)" != "$CONFIG" ]]; then
+  echo "restarting proxy with $CONFIG" >&2
+  pkill -f "[l]itellm --config litellm" || true
+  sleep 2
+fi
+
 if ! curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null; then
   command -v litellm >/dev/null || { echo "install: pip install 'litellm[proxy]'" >&2; exit 1; }
-  litellm --config litellm.yaml --host 127.0.0.1 --port "$PORT" >litellm.log 2>&1 &
+  echo "$CONFIG" >"$STATE"
+  litellm --config "$CONFIG" --host 127.0.0.1 --port "$PORT" >litellm.log 2>&1 &
   for _ in $(seq 1 60); do
     curl -sf "http://localhost:$PORT/health/liveliness" >/dev/null && break
     sleep 1

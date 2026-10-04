@@ -1,4 +1,4 @@
-# Claude Code on free models (Groq, with Gemini fallback)
+# Claude Code on free models (Groq now, NVIDIA NIM when you have a key)
 
 Runs Claude Code against free models through a local LiteLLM proxy, which
 translates Claude Code's Anthropic-format requests to the OpenAI format these
@@ -21,9 +21,11 @@ Extra arguments go to `claude`. Proxy logs go to `litellm.log`.
   sends a large system prompt and tool list with every request, so some requests can be
   rejected as too large or rate-limited. LiteLLM then retries them on Gemini. Gemini's
   free tier may use prompts for training; leave `GEMINI_API_KEY` unset to opt out.
-- **NVIDIA NIM instead**: a commented block in `litellm.yaml` swaps it in as `free-main`
-  (needs phone verification and `NVIDIA_NIM_API_KEY`).
-- **Without the script**: run `litellm --config litellm.yaml --host 127.0.0.1 --port 4000`
+- **Switching to NVIDIA NIM**: once you have a key (build.nvidia.com/settings/api-keys, phone
+  verification), just add `NVIDIA_NIM_API_KEY=nvapi-...` to the command. The script then uses
+  `litellm-nim.yaml`: NIM `moonshotai/kimi-k2.6` / `z-ai/glm-5.1` as main, Groq and Gemini as
+  fallbacks if their keys are set. A proxy already running with the other config is restarted.
+- **Without the script**: run `litellm --config litellm.yaml` --host 127.0.0.1 --port 4000` (or `litellm-nim.yaml`)
   with `LITELLM_MASTER_KEY` and the provider keys set, and merge `settings-env.json` into
   `~/.claude/settings.json`, using the master key as `ANTHROPIC_AUTH_TOKEN`.
 - Free models make more tool-call and edit mistakes than Claude.

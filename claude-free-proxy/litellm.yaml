@@ -3,6 +3,8 @@
 # Optional fallback: Google Gemini, used when Groq rejects a request
 # (rate limit, or a request too large for Groq's free tokens-per-minute cap).
 #
+# claude-free.sh uses litellm-nim.yaml instead when NVIDIA_NIM_API_KEY is set.
+#
 # Verify model ids:
 #   curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY" | jq -r '.data[].id'
 #   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" | jq -r '.models[].name'
@@ -20,12 +22,6 @@ model_list:
       model: gemini/gemini-3.6-flash
       api_key: os.environ/GEMINI_API_KEY
 
-  # NVIDIA NIM alternative (phone verification, ~40 RPM). To use it as the
-  # main model, swap it in for free-main and set NVIDIA_NIM_API_KEY.
-  # - model_name: free-main
-  #   litellm_params:
-  #     model: nvidia_nim/moonshotai/kimi-k2.6
-  #     api_key: os.environ/NVIDIA_NIM_API_KEY
 
 litellm_settings:
   drop_params: true                  # drop Anthropic-only params the backend rejects
