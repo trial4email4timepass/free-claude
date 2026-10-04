@@ -25,7 +25,7 @@ Extra arguments go to `claude`. Proxy logs go to `litellm.log`.
   verification), just add `NVIDIA_NIM_API_KEY=nvapi-...` to the command. The script then uses
   `litellm-nim.yaml`: NIM `moonshotai/kimi-k2.6` / `z-ai/glm-5.1` as main, Groq and Gemini as
   fallbacks if their keys are set. A proxy already running with the other config is restarted.
-- **Without the script**: run `litellm --config litellm.yaml` --host 127.0.0.1 --port 4000` (or `litellm-nim.yaml`)
+- **Without the script**: run `litellm --config litellm.yaml --host 127.0.0.1 --port 4000` (or `litellm-nim.yaml`)
   with `LITELLM_MASTER_KEY` and the provider keys set, and merge `settings-env.json` into
   `~/.claude/settings.json`, using the master key as `ANTHROPIC_AUTH_TOKEN`.
 - Free models make more tool-call and edit mistakes than Claude.
