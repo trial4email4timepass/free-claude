@@ -1,0 +1,11 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:4000",
+    "ANTHROPIC_AUTH_TOKEN": "<contents of ~/.config/claude-nim/master_key>",
+    "ANTHROPIC_API_KEY": "",
+    "ANTHROPIC_MODEL": "free-main",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "free-main",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "free-main",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "free-fast"
+  }
+}
