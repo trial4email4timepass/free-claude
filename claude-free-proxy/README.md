@@ -15,6 +15,25 @@ refuses to start without one), and launches `claude` with the right env vars.
 Run it from your project folder (Claude Code starts in your current directory). Extra
 arguments go to `claude`. Proxy logs go to `litellm.log` next to the script.
 
+## Switching models
+
+Type `/model` in Claude Code. The script loads a menu of just the free models (from
+`picker-nim.json` or `picker-groq.json`, depending on which key is set), each with a label and
+note. Move with the arrow keys, then:
+
+- **`s`**: switch for this session only. Use this one.
+- **Enter**: also saves the pick as your default in `~/.claude/settings.json`, which plain
+  `claude` (on your Anthropic account) would then try to use. Avoid it, or switch back later.
+
+Each session starts on **Auto** (main model plus fallbacks). To start on another model, set e.g.
+`CLAUDE_FREE_MODEL=nim/kimi-k3`. The menu also keeps Claude Code's built-in "Default" row; the
+proxy routes any Claude model name to the main free model, so it works too. Untested NVIDIA rows
+fall back to GLM 5.3 if the model errors. Claude Code prints a one-line "isn't described by this
+version's model catalog" notice for these names; it's harmless.
+
+To add a model: add a `model_name` entry in the matching `litellm*.yaml`, then a row with the same
+`model` in the picker file and in its `availableModels` list.
+
 - **Models** (in `litellm.yaml`, Oct 2026 snapshot; check ids with the `curl`s there):
   `free-main` = Groq `moonshotai/kimi-k2-instruct-0905`, `free-fast` = Groq
   `llama-3.1-8b-instant`, `free-backup` = Gemini `gemini-3.6-flash`.

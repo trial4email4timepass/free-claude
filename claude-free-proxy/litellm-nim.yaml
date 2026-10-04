@@ -30,9 +30,42 @@ model_list:
       model: gemini/gemini-3.6-flash
       api_key: os.environ/GEMINI_API_KEY
 
+  # Pickable in Claude Code's /model menu (rows in picker-nim.json).
+  - model_name: nim/glm-5.3
+    litellm_params:
+      model: nvidia_nim/z-ai/glm-5.3
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: nim/kimi-k3
+    litellm_params:
+      model: nvidia_nim/moonshotai/kimi-k3
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: nim/deepseek-v4.1-flash
+    litellm_params:
+      model: nvidia_nim/deepseek-ai/deepseek-v4.1-flash
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: nim/nemotron-3-ultra
+    litellm_params:
+      model: nvidia_nim/nvidia/nemotron-3-ultra-550b-a55b
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: nim/nemotron-3-super
+    litellm_params:
+      model: nvidia_nim/nvidia/nemotron-3-super-120b-a12b
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: nim/nemotron-3.5-lightning
+    litellm_params:
+      model: nvidia_nim/nvidia/nemotron-3.5-lightning-30b-a3b
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+
+  # Any Claude model name (e.g. the picker's built-in "Default" row) goes to the main free model.
+  - model_name: "claude-*"
+    litellm_params:
+      model: nvidia_nim/z-ai/glm-5.3
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+
 litellm_settings:
   drop_params: true
-  fallbacks: [{"free-main": ["nim-alt", "groq-main", "free-backup"]}, {"free-fast": ["nim-alt", "groq-main", "free-backup"]}]
+  fallbacks: [{"free-main": ["nim-alt", "groq-main", "free-backup"]}, {"free-fast": ["nim-alt", "groq-main", "free-backup"]},
+              {"nim/deepseek-v4.1-flash": ["nim/glm-5.3"]}, {"nim/nemotron-3-ultra": ["nim/glm-5.3"]}, {"nim/nemotron-3-super": ["nim/glm-5.3"]}, {"nim/nemotron-3.5-lightning": ["nim/glm-5.3"]}, {"nim/kimi-k3": ["nim/glm-5.3"]}, {"nim/glm-5.3": ["nim/kimi-k3"]}]
   context_window_fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
 
 general_settings:

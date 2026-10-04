@@ -8,10 +8,12 @@ DIR="$(cd "$(dirname "$0")" && pwd)"   # config lives here; claude runs in the c
 
 if [[ -n "${NVIDIA_NIM_API_KEY:-}" ]]; then
   CONFIG="$DIR/litellm-nim.yaml"
+  PICKER="$DIR/picker-nim.json"
   echo "provider: NVIDIA NIM (fallbacks: Groq, Gemini if their keys are set)" >&2
 else
   : "${GROQ_API_KEY:?set GROQ_API_KEY (console.groq.com/keys) or NVIDIA_NIM_API_KEY}"
   CONFIG="$DIR/litellm.yaml"
+  PICKER="$DIR/picker-groq.json"
   echo "provider: Groq (set NVIDIA_NIM_API_KEY to switch to NVIDIA NIM)" >&2
 fi
 if [[ -z "${GEMINI_API_KEY:-}" ]]; then
@@ -54,8 +56,9 @@ fi
 export ANTHROPIC_BASE_URL="http://localhost:$PORT"
 export ANTHROPIC_AUTH_TOKEN="$LITELLM_MASTER_KEY"
 export ANTHROPIC_API_KEY=""
-export ANTHROPIC_MODEL="free-main"
+export ANTHROPIC_MODEL="${CLAUDE_FREE_MODEL:-free-main}"   # starting model; switch in /model with s
 export ANTHROPIC_DEFAULT_OPUS_MODEL="free-main"
 export ANTHROPIC_DEFAULT_SONNET_MODEL="free-main"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="free-fast"
-exec claude "$@"
+# --settings adds the free models to the /model menu (arrows + Enter to switch)
+exec claude --settings "$PICKER" "$@"
