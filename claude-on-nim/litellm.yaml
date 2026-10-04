@@ -1,0 +1,31 @@
+# LiteLLM proxy: lets Claude Code (Anthropic Messages API) use NVIDIA NIM's
+# free OpenAI-compatible models. Verify model ids with:
+#   curl -s https://integrate.api.nvidia.com/v1/models \
+#     -H "Authorization: Bearer $NVIDIA_NIM_API_KEY" | jq -r '.data[].id'
+model_list:
+  - model_name: free-main            # main coding model
+    litellm_params:
+      model: nvidia_nim/moonshotai/kimi-k2.6
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+  - model_name: free-fast            # background/haiku-class tasks
+    litellm_params:
+      model: nvidia_nim/z-ai/glm-5.1
+      api_key: os.environ/NVIDIA_NIM_API_KEY
+
+  # Optional fallback when NIM rate-limits (~40 RPM). Uncomment, set
+  # GROQ_API_KEY, and uncomment `fallbacks` below.
+  # - model_name: free-backup
+  #   litellm_params:
+  #     model: groq/moonshotai/kimi-k2-instruct-0905
+  #     api_key: os.environ/GROQ_API_KEY
+
+litellm_settings:
+  drop_params: true                  # drop Anthropic-only params the backend rejects
+  # fallbacks: [{"free-main": ["free-backup"]}, {"free-fast": ["free-backup"]}]
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY   # claude-nim.sh generates and stores one
+
+router_settings:
+  num_retries: 2
+  retry_after: 5
