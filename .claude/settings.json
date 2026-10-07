@@ -64,6 +64,12 @@
         "source": "github",
         "repo": "tigerless-labs/autoharness"
       }
+    },
+    "mattpocock": {
+      "source": {
+        "source": "github",
+        "repo": "mattpocock/skills"
+      }
     }
   },
   "enabledPlugins": {
@@ -103,6 +109,7 @@
     "legal-clinic@claude-for-legal": true,
     "legal-builder-hub@claude-for-legal": true,
     "cocounsel-legal@claude-for-legal": true,
-    "autoharness@autoharness": true
+    "autoharness@autoharness": true,
+    "mattpocock-skills@mattpocock": true
   }
 }
