@@ -1062,3 +1062,20 @@ events, including:
 It also starts a stdio MCP server (`servers/mcp-proxy.mjs`). Point it only at
 a server you trust with your conversation contents. To update, review the
 upstream diff for `examples/claude-code-memory-plugin`, then change the `sha`.
+
+## StarRocks overview
+
+Notes on [StarRocks/starrocks](https://github.com/StarRocks/starrocks), based on its GitHub repository page and README.
+
+StarRocks is an open-source, high-performance analytical database built for sub-second, ad-hoc analytics both on and off the data lakehouse. It's pitched as the world's fastest open query engine — average query performance ~3x faster than other popular alternatives — without requiring denormalization or moving/rewriting data to fit the engine. It's a Linux Foundation project.
+
+- License: Apache License 2.0
+- Site: [starrocks.io](https://starrocks.io)
+- Stack: Java 54.8%, C++ 42.4% (plus Python, C, Thrift, CMake)
+- ~12.1k stars / ~2.6k forks, 188 watchers, 618+ contributors, 1.4k branches, 307 tags at time of writing (latest release: 4.0.13, 192 releases total)
+
+Key features: native vectorized SQL engine (5-10x faster multi-dimensional queries), full ANSI SQL + MySQL wire-protocol compatibility, a cost-based optimizer, real-time upsert/delete via a primary-key model, auto-refreshed materialized views, and direct queries against Hive/Iceberg/Delta Lake/Hudi without importing.
+
+Architecture: a Frontend (FE, metadata/planning/coordination) and Backend (BE, execution/storage), both horizontally scalable with replication. Since v3.0, StarRocks also supports an optional shared-data (storage/compute separation) architecture alongside the original shared-nothing mode.
+
+Links: [starrocks.io](https://starrocks.io) · [github.com/StarRocks/starrocks](https://github.com/StarRocks/starrocks)
