@@ -4,6 +4,8 @@
 
 - **create-plan** (`.claude/skills/create-plan/`) — turns a coding request into a single, read-only, actionable plan. Ported from [openai/skills](https://github.com/openai/skills)'s `skills/.experimental/create-plan` (as of commit `a511969`, the last commit before it was removed upstream in [`ea6b206`](https://github.com/openai/skills/commit/ea6b206c683087da5b503f5ac9d7202b326ac6bb)). Licensed under Apache License 2.0; see `.claude/skills/create-plan/LICENSE.txt`.
 
+- **arena** (`.claude/skills/arena/`) — `/arena [--quick | --agents N] [--seed S] <task>`: when an answer isn't good enough, runs N sub-agents (default 100, `--quick` = 16) on the same task with different strategy cards, then a single-elimination bracket with a rubric-scoring judge until one solution survives. Bookkeeping via a stdlib-only `bracket.py` (state in `.arena/` in the cwd). Vendored from [Jakeschincariol/arena-skill](https://github.com/Jakeschincariol/arena-skill) at commit `df07b8e`; MIT, see `.claude/skills/arena/LICENSE`. Note: the default 100-agent run is token-heavy — prefer `--quick`.
+
 - **mattpocock-skills** (Claude Code plugin, enabled in `.claude/settings.json` via the `mattpocock` marketplace → [mattpocock/skills](https://github.com/mattpocock/skills), MIT) — 27 engineering/productivity skills, namespaced as `mattpocock-skills:<name>`: grilling (`grill-me`, `grill-with-docs`), `to-spec` / `to-tickets` / `implement`, `tdd`, `diagnosing-bugs`, `code-review`, `domain-modeling`, `codebase-design`, `improve-codebase-architecture`, `prototype`, `research`, `handoff`, `teach`, `writing-for-agents`, and more. Run `/mattpocock-skills:setup-matt-pocock-skills` once per repo before using the tracker-based flows.
 
 ## Agent Reach (reference note, not vendored)
