@@ -1066,3 +1066,19 @@ events, including:
 It also starts a stdio MCP server (`servers/mcp-proxy.mjs`). Point it only at
 a server you trust with your conversation contents. To update, review the
 upstream diff for `examples/claude-code-memory-plugin`, then change the `sha`.
+
+## Claude Code `Artifact` tool schema (reference)
+
+`reference/claude-artifact-tool.schema.json` is the input schema of Claude
+Code's built-in `Artifact` tool (JSON Schema draft 2020-12), kept here as a
+reference. The tool publishes HTML pages as private claude.ai artifacts and
+also lists, reads, opens, pins/unpins and deletes them. It has a
+`quickstart` action that picks an Artifact type (document, slides, design).
+
+Notes:
+
+- The copy here was normalized to valid JSON (quote escaping only); no
+  field, constraint or description text was changed. It passes
+  `jsonschema.Draft202012Validator.check_schema`.
+- It is a snapshot. The live tool definition can change between Claude Code
+  releases, so treat this file as documentation, not a contract.
