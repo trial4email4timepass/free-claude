@@ -8,6 +8,8 @@
 
 - **brigade-\*** (`.claude/skills/brigade-*/`, 55 skills) — the skill library from [spinabot/brigade](https://github.com/spinabot/brigade) (a self-hosted multi-agent app; only its `skills/` folder is vendored, not the app), at commit `4c2a18f`, MIT (`LICENSE` in each folder). Each skill is renamed `brigade-<name>` to avoid clashes; upstream `obsidian`, `oracle`, `skill-creator` and `xurl` were skipped because this repo already has skills by those names, and `coding-agent` was deliberately left out because it tells the agent to launch Claude Code/Codex with permissions bypassed (`bypassPermissions`, `--dangerously-skip-permissions`, `--yolo`). Most skills wrap an external CLI (listed under `metadata.brigade.requires.bins` in each SKILL.md) that must be installed first, several are macOS-only (`apple-notes`, `imsg`, `peekaboo`, `things-mac`, …), and a few (`oauth-setup`, `session-logs`, `taskflow`, `canvas`, `node-connect`, `healthcheck`, `model-usage`, `voice-call`) reference Brigade runtime tools and only fully work inside Brigade.
 
+- **9router\*** (`.claude/skills/9router*/`, 9 skills) — the `skills/` folder of [decolua/9router](https://github.com/decolua/9router) at commit `87a74e1`, MIT (`LICENSE` in each folder): chat, image, video, TTS, STT, embeddings, web search and web fetch through a running 9Router gateway. Needs `NINEROUTER_URL`/`NINEROUTER_KEY`; see [`claude-on-9router/`](claude-on-9router) to also run Claude Code itself through 9Router.
+
 - **mattpocock-skills** (Claude Code plugin, enabled in `.claude/settings.json` via the `mattpocock` marketplace → [mattpocock/skills](https://github.com/mattpocock/skills), MIT) — 27 engineering/productivity skills, namespaced as `mattpocock-skills:<name>`: grilling (`grill-me`, `grill-with-docs`), `to-spec` / `to-tickets` / `implement`, `tdd`, `diagnosing-bugs`, `code-review`, `domain-modeling`, `codebase-design`, `improve-codebase-architecture`, `prototype`, `research`, `handoff`, `teach`, `writing-for-agents`, and more. Run `/mattpocock-skills:setup-matt-pocock-skills` once per repo before using the tracker-based flows.
 
 ## Agent Reach (reference note, not vendored)
@@ -591,6 +593,7 @@ Analysis runs locally. Native-binary analysis needs Hopper or Ghidra installed o
 ## Run Claude Code on free models
 
 - [`claude-on-openrouter/`](claude-on-openrouter) — OpenRouter `:free` models (Nemotron, Laguna, Qwen, …), no proxy needed.
+- [`claude-on-9router/`](claude-on-9router) — [9Router](https://github.com/decolua/9router) local gateway (port 20128): auto-fallback across subscription, cheap and free providers (Kiro, OpenCode Free, …), plus tool-output compression. Its nine REST skills are vendored in `.claude/skills/9router*`.
 - [`claude-on-nim/`](claude-on-nim) — NVIDIA NIM free models through a local LiteLLM proxy.
 
 ## free-llm-api (authored skill)
